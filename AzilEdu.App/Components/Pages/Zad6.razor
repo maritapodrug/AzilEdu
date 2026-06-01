@@ -1,0 +1,34 @@
+﻿@page "/zad6"
+@rendermode InteractiveServer
+
+<label>
+	Dodaj zadatak:
+		<input @bind="noviZadatak"/>
+</label>
+
+<button @onclick="DodajZadatak">Dodaj</button>
+
+@foreach (string zadatak in zadaci)
+{
+	<p>@zadatak</p>
+}
+
+@code{
+	string noviZadatak = "";
+
+	List<string> zadaci = new()
+	{
+		"Zadatak 1",
+		"Zadatak 2",
+		"Zadatak 3"
+	};
+
+	void DodajZadatak()
+	{
+		if (!string.IsNullOrWhiteSpace(noviZadatak))
+		{
+			zadaci.Add(noviZadatak);
+			noviZadatak = "";
+		}
+	}
+}

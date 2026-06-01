@@ -1,0 +1,17 @@
+﻿@page "/zad5"
+
+<ul>
+	@foreach (string film in filmovi)
+	{
+		<li>@film</li>
+	}
+</ul>
+
+@code{
+	List<string> filmovi = new()
+	{
+		"Film 1",
+		"Film 2",
+		"Film 3"
+	};
+}
