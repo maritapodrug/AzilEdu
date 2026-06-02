@@ -1,0 +1,146 @@
+﻿@page "/mudblazor-komponente"
+
+<MudButton Color="Color.Primary">Spremi</MudButton>
+
+<MudStack Spacing="1">
+    <MudText Typo="Typo.h4">Species</MudText>
+    <MudText Typo="Typo.subtitle1">Vrste životinja u sustavu</MudText>
+    <MudText Typo="Typo.body1">Ovdje prikazujemo osnovni tekst.</MudText>
+    <MudText Typo="Typo.caption">Manji pomoćni tekst</MudText>
+</MudStack>
+
+<MudStack Spacing="1">
+    <MudText Typo="Typo.h5" Color="Color.Primary">Animals</MudText>
+    <MudText Typo="Typo.h6" Color="Color.Success">Podaci su uspješno spremljeni</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Error">Došlo je do greške</MudText>
+</MudStack>
+
+<MudText Typo="Typo.h4" GutterBottom="true">
+    Species
+</MudText>
+
+<MudText Typo="Typo.body1" Align="Align.Center">
+    Dobro došli u AzilEdu
+</MudText>
+
+<MudStack Spacing="2">
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h6">Species</MudText>
+    </MudPaper>
+
+    <MudPaper Class="pa-4" Elevation="4">
+        <MudText Typo="Typo.h6">Adopters</MudText>
+    </MudPaper>
+
+    <MudPaper Class="pa-4" Outlined="true">
+        <MudText Typo="Typo.h6">Housing Units</MudText>
+    </MudPaper>
+
+    <MudPaper Class="pa-6">
+        <MudText Typo="Typo.h5">Animals</MudText>
+        <MudText Typo="Typo.body2">Kartica s više unutarnjeg razmaka.</MudText>
+    </MudPaper>
+</MudStack>
+
+<MudStack Spacing="2">
+    <MudText Typo="Typo.h5">Animals</MudText>
+    <MudText Typo="Typo.body2">Popis životinja u azilu.</MudText>
+</MudStack>
+
+<MudStack Row="true" Spacing="2">
+    <MudButton Color="Color.Primary">Dodaj</MudButton>
+    <MudButton Variant="Variant.Outlined">Pregled</MudButton>
+</MudStack>
+
+<MudStack Row="true"
+          Justify="Justify.SpaceBetween"
+          AlignItems="AlignItems.Center">
+    <MudText Typo="Typo.h4">Species</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary">
+        Add Species
+    </MudButton>
+</MudStack>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">Animals</MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">Species</MudPaper>
+    </MudItem>
+</MudGrid>
+
+<MudGrid>
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4">Animals</MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4">Species</MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4">Adopters</MudPaper>
+    </MudItem>
+</MudGrid>
+
+<MudGrid>
+    <MudItem xs="12" md="8">
+        <MudPaper Class="pa-4">Glavni sadržaj</MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4">Bočni sadržaj</MudPaper>
+    </MudItem>
+</MudGrid>
+
+<MudButton>Dodaj</MudButton>
+
+<MudButton StartIcon="@Icons.Material.Filled.Add"
+           Variant="Variant.Filled"
+           Color="Color.Primary">
+    Dodaj
+</MudButton>
+
+<MudButton EndIcon="@Icons.Material.Filled.ArrowForward"
+           Variant="Variant.Outlined"
+           Color="Color.Secondary">
+    Nastavi
+</MudButton>
+
+<MudStack Row="true" Spacing="2">
+    <MudButton Variant="Variant.Filled" Color="Color.Primary">
+        Add Species
+    </MudButton>
+
+    <MudButton Variant="Variant.Outlined" Color="Color.Secondary">
+        Pregled vrsta
+    </MudButton>
+
+    <MudButton Variant="Variant.Text" Color="Color.Info">
+        Saznaj više
+    </MudButton>
+
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Success"
+               Size="Size.Large"
+               StartIcon="@Icons.Material.Filled.Check">
+        Spremi
+    </MudButton>
+</MudStack>
+
+<MudPaper Class="pa-4" Elevation="2">
+    <MudImage Src="images/rex.webp"
+              Alt="Pas Rex"
+              Width="250"
+              Class="mb-2" />
+
+    <MudText Typo="Typo.h6">Rex</MudText>
+    <MudText Typo="Typo.body2">
+        Pas star 3 godine, miran i druželjubiv.
+    </MudText>
+
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               Class="mt-2">
+        Detalji
+    </MudButton>
+</MudPaper>
+

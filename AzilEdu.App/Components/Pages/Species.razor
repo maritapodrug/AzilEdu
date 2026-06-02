@@ -1,6 +1,18 @@
 ﻿@page "/species"
 
-<MudText Typo="Typo.h4">Species</MudText>
-<MudText Typo="Typo.body1">
-    Ovdje će se prikazivati vrste životinja.
-</MudText>
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4">Species</MudText>
+    <MudText Typo="Typo.body1">Vrste životinja u sustavu.</MudText>
+    
+    <MudPaper Class="pa-4" Elevation="2">
+        <MudText Typo="Typo.h5">Species1</MudText>
+    </MudPaper>
+
+    <MudPaper Class="pa-4" Elevation="2">
+        <MudText Typo="Typo.h5">Species2</MudText>
+    </MudPaper>
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary">
+        Add Species
+    </MudButton>
+</MudStack>
