@@ -1,18 +1,130 @@
 ﻿@page "/species"
 
-<MudStack Spacing="3">
-    <MudText Typo="Typo.h4">Species</MudText>
-    <MudText Typo="Typo.body1">Vrste životinja u sustavu.</MudText>
-    
-    <MudPaper Class="pa-4" Elevation="2">
-        <MudText Typo="Typo.h5">Species1</MudText>
-    </MudPaper>
+<MudText Typo="Typo.h3" GutterBottom="true">
+    Species
+</MudText>
 
-    <MudPaper Class="pa-4" Elevation="2">
-        <MudText Typo="Typo.h5">Species2</MudText>
-    </MudPaper>
+<MudText Typo="Typo.body1" Class="mb-4">
+    Pregled svih pasmina životinja koje se nalaze u azilu.
+</MudText>
 
-    <MudButton Variant="Variant.Filled" Color="Color.Primary">
-        Add Species
-    </MudButton>
-</MudStack>
+<MudGrid>
+
+    <MudItem xs="12" md="6" lg="3">
+        <MudCard Class="h-100">
+            <MudCardMedia Image="images/dog.jpg" Height="200" />
+
+            <MudCardContent>
+                <MudText Typo="Typo.h5">Dogs</MudText>
+                <MudText Typo="Typo.subtitle2" Color="Color.Primary">
+                    Canis lupus familiaris
+                </MudText>
+
+                <MudText Typo="Typo.body2" Class="mt-2">
+                    Domestic dogs are loyal, intelligent, and social animals commonly kept as companions and family pets.
+                </MudText>
+
+                <MudDivider Class="my-2" />
+
+                <MudText Typo="Typo.body2"><b>Average Lifespan:</b> 10–13 years</MudText>
+                <MudText Typo="Typo.body2"><b>Diet Type:</b> Omnivore</MudText>
+                <MudText Typo="Typo.body2"><b>Animals in Shelter:</b> 24</MudText>
+            </MudCardContent>
+
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary">
+                    View Details
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" md="6" lg="3">
+        <MudCard Class="h-100">
+            <MudCardMedia Image="images/cat.jpg" Height="200" />
+
+            <MudCardContent>
+                <MudText Typo="Typo.h5">Cats</MudText>
+                <MudText Typo="Typo.subtitle2" Color="Color.Primary">
+                    Felis catus
+                </MudText>
+
+                <MudText Typo="Typo.body2" Class="mt-2">
+                    Cats are independent, agile, and affectionate animals that are among the most popular pets worldwide.
+                </MudText>
+
+                <MudDivider Class="my-2" />
+
+                <MudText Typo="Typo.body2"><b>Average Lifespan:</b> 12–18 years</MudText>
+                <MudText Typo="Typo.body2"><b>Diet Type:</b> Carnivore</MudText>
+                <MudText Typo="Typo.body2"><b>Animals in Shelter:</b> 18</MudText>
+            </MudCardContent>
+
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary">
+                    View Details
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" md="6" lg="3">
+        <MudCard Class="h-100">
+            <MudCardMedia Image="images/rabbit.jpg" Height="200" />
+
+            <MudCardContent>
+                <MudText Typo="Typo.h5">Rabbits</MudText>
+                <MudText Typo="Typo.subtitle2" Color="Color.Primary">
+                    Oryctolagus cuniculus
+                </MudText>
+
+                <MudText Typo="Typo.body2" Class="mt-2">
+                    Rabbits are gentle herbivores known for their long ears, playful behaviour, and social nature.
+                </MudText>
+
+                <MudDivider Class="my-2" />
+
+                <MudText Typo="Typo.body2"><b>Average Lifespan:</b> 8–12 years</MudText>
+                <MudText Typo="Typo.body2"><b>Diet Type:</b> Herbivore</MudText>
+                <MudText Typo="Typo.body2"><b>Animals in Shelter:</b> 12</MudText>
+            </MudCardContent>
+
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary">
+                    View Details
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" md="6" lg="3">
+        <MudCard Class="h-100">
+            <MudCardMedia Image="images/bird.jpg" Height="200" />
+
+            <MudCardContent>
+                <MudText Typo="Typo.h5">Birds</MudText>
+                <MudText Typo="Typo.subtitle2" Color="Color.Primary">
+                    Aves
+                </MudText>
+
+                <MudText Typo="Typo.body2" Class="mt-2">
+                    Birds are feathered vertebrates known for their ability to fly, sing, and adapt to many environments.
+                </MudText>
+
+                <MudDivider Class="my-2" />
+
+                <MudText Typo="Typo.body2"><b>Average Lifespan:</b> 5–30 years</MudText>
+                <MudText Typo="Typo.body2"><b>Diet Type:</b> Omnivore</MudText>
+                <MudText Typo="Typo.body2"><b>Animals in Shelter:</b> 9</MudText>
+            </MudCardContent>
+
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary">
+                    View Details
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+
+</MudGrid>
+
