@@ -162,19 +162,19 @@
     };
     
 
-    // private int TotalAnimals => animals.Count;
+    private int TotalAnimals => animals.Count;
 
-    // private int AnimalsInShelter => animals.Count(animal => !animal.IsAdopted);
+    private int AnimalsInShelter => animals.Count(animal => !animal.IsAdopted);
 
-    // private int AdoptedAnimals => animals.Count(animal => animal.IsAdopted);
+    private int AdoptedAnimals => animals.Count(animal => animal.IsAdopted);
 
-    // private IEnumerable<Animal> FilteredAnimals =>
-    //         selectedStatus switch
-    //         {
-    //             "U azilu" => animals.Where(animal => !animal.IsAdopted),
-    //             "Udomljene" => animals.Where(animal => animal.IsAdopted),
-    //             _ => animals
-    //         };
+    private IEnumerable<Animal> FilteredAnimals =>
+            selectedStatus switch
+            {
+                "U azilu" => animals.Where(animal => !animal.IsAdopted),
+                "Udomljene" => animals.Where(animal => animal.IsAdopted),
+                _ => animals
+            };
 
     private void ShowAllAnimals()
     {
