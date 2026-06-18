@@ -1,0 +1,223 @@
+﻿@* @page "/housing-units"
+@rendermode InteractiveServer
+@using AzilEdu.Shared.Models
+
+<PageTitle>Smještajne jedinice</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-2">Popis smještajnih jedinica</MudText>
+<MudText Typo="Typo.body1" Class="mb-4">
+    Ovdje se prikazuje pregled smještajnih jedinica za životinje koje se trenutačno nalaze u azilu.
+</MudText>
+
+<MudGrid Class="mb-4">
+    <MudItem xs="12" sm="4">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.subtitle2">Ukupan broj jedinica</MudText>
+            <MudText Typo="Typo.h5">@TotalNumber</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="4">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.subtitle2">Broj aktivnih jedinica</MudText>
+            <MudText Typo="Typo.h5">@NumberOfActive</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="4">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.subtitle2">Broj punih jedinica</MudText>
+            <MudText Typo="Typo.h5">@NumberOfFull</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="4">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.subtitle2">Ukupan slobodni kapacitet</MudText>
+            <MudText Typo="Typo.h5">@FreeCapacity</MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined" Class="mb-4">
+    <MudButton OnClick="@ShowAllAnimals">Sve</MudButton>
+    <MudButton OnClick="@ShowAnimalsInShelter">Aktivne</MudButton>
+    <MudButton OnClick="@ShowAdoptedAnimals">Pune</MudButton>
+    <MudButton OnClick="@ShowAdoptedAnimals">Sa slobodnim mjestima</MudButton>
+</MudButtonGroup>
+
+<MudTable Items="@FilteredAnimals" Hover="true" Striped="true" Bordered="true" Dense="true">
+    <HeaderContent>
+        <MudTh>Slika</MudTh>
+        <MudTh>Naziv</MudTh>
+        <MudTh>Tip</MudTh>
+        <MudTh>Kapacitet</MudTh>
+        <MudTh>Zauzeto</MudTh>
+        <MudTh>Slobodno</MudTh>
+        <MudTh>Zadnje čišćenje</MudTh>
+        <MudTh>Status</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Slika">
+            <MudAvatar Size="Size.Large">
+                <MudImage Src="@context.ImageUrl" Alt="@context.Name" />
+            </MudAvatar>
+        </MudTd>
+        <MudTd DataLabel="Slika">@context.Name</MudTd>
+        <MudTd DataLabel="Naziv">@context.Species</MudTd>
+        <MudTd DataLabel="Tip">@context.Breed</MudTd>
+        <MudTd DataLabel="Kapacitet">@context.Gender</MudTd>
+        <MudTd DataLabel="Zauzeto">@GetAgeText(context)</MudTd>
+        <MudTd DataLabel="Slobodno">@GetArrivalDateText(context)</MudTd>
+        <MudTd DataLabel="Zadnje čišćenje">@GetArrivalDateText(context)</MudTd>
+        <MudTd DataLabel="Status">
+            <MudChip T="string"
+                     Color="@(context.IsAdopted ? Color.Success : Color.Warning)"
+                     Variant="Variant.Filled">
+                @GetAdoptionStatusText(context)
+            </MudChip>
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    private string selectedStatus = "Sve";
+
+        private List<HousingUnit> housingUnits = new()
+    {
+        new HousingUnit
+        {
+            Id = 1,
+            Name = "Boks A1",
+            UnitType = "Boks za pse",
+            Capacity = 4,
+            Occupied = 4, // puna jedinica
+            LastCleanedAt = DateTime.Now.AddDays(-1),
+            IsActive = true,
+            ImageUrl = "/images/dog-box-1.jpg",
+            Note = "Veliki boks za pse"
+        },
+
+        new HousingUnit
+        {
+            Id = 2,
+            Name = "Boks B2",
+            UnitType = "Boks za pse",
+            Capacity = 3,
+            Occupied = 1, // ima slobodnih mjesta
+            LastCleanedAt = DateTime.Now.AddDays(-3),
+            IsActive = true,
+            ImageUrl = "/images/dog-box-2.jpg",
+            Note = "Mirniji smještaj za manjeg psa"
+        },
+
+        new HousingUnit
+        {
+            Id = 3,
+            Name = "Mačji prostor M1",
+            UnitType = "Prostor za mačke",
+            Capacity = 6,
+            Occupied = 3,
+            LastCleanedAt = DateTime.Now.AddDays(-2),
+            IsActive = true,
+            ImageUrl = "/images/cat-room.jpg",
+            Note = "Odvojeni prostor s penjalicama"
+        },
+
+        new HousingUnit
+        {
+            Id = 4,
+            Name = "Karantena K1",
+            UnitType = "Karantena",
+            Capacity = 2,
+            Occupied = 1,
+            LastCleanedAt = null, // nije poznato
+            IsActive = true,
+            ImageUrl = "/images/quarantine.jpg",
+            Note = "Čeka dezinfekciju"
+        },
+
+        new HousingUnit
+        {
+            Id = 5,
+            Name = "Privremeni smještaj P1",
+            UnitType = "Privremeni smještaj",
+            Capacity = 5,
+            Occupied = 0,
+            LastCleanedAt = DateTime.Now.AddDays(-7),
+            IsActive = false, // neaktivna jedinica
+            ImageUrl = "/images/storage.jpg",
+            Note = "Trenutno izvan uporabe"
+        },
+
+        new HousingUnit
+        {
+            Id = 6,
+            Name = "Boks C3",
+            UnitType = "Boks za pse",
+            Capacity = 2,
+            Occupied = 2,
+            LastCleanedAt = DateTime.Now.AddDays(-5),
+            IsActive = true,
+            ImageUrl = "/images/dog-box-3.jpg",
+            Note = "Mali boks za dva psa"
+        }
+    };
+    
+
+    // private int TotalAnimals => animals.Count;
+
+    // private int AnimalsInShelter => animals.Count(animal => !animal.IsAdopted);
+
+    // private int AdoptedAnimals => animals.Count(animal => animal.IsAdopted);
+
+    // private IEnumerable<Animal> FilteredAnimals =>
+    //         selectedStatus switch
+    //         {
+    //             "U azilu" => animals.Where(animal => !animal.IsAdopted),
+    //             "Udomljene" => animals.Where(animal => animal.IsAdopted),
+    //             _ => animals
+    //         };
+
+    private void ShowAllAnimals()
+    {
+        selectedStatus = "Sve";
+    }
+
+    private void ShowAnimalsInShelter()
+    {
+        selectedStatus = "U azilu";
+    }
+
+    private void ShowAdoptedAnimals()
+    {
+        selectedStatus = "Udomljene";
+    }
+
+    private string GetAgeText(Animal animal)
+    {
+        if (animal.Age.HasValue)
+        {
+            return $"{animal.Age.Value} god.";
+        }
+
+        return "Nepoznato";
+    }
+
+    private string GetArrivalDateText(Animal animal)
+    {
+        if (animal.ArrivalDate.HasValue)
+        {
+            return animal.ArrivalDate.Value.ToShortDateString();
+        }
+
+        return "Nije uneseno";
+    }
+
+    private string GetAdoptionStatusText(Animal animal)
+    {
+        if (animal.IsAdopted)
+        {
+            return "Udomljena";
+        }
+
+        return "U azilu";
+    }
+} *@

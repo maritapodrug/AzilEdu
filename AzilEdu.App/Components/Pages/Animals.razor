@@ -30,6 +30,18 @@
             <MudText Typo="Typo.h5">@AdoptedAnimals</MudText>
         </MudPaper>
     </MudItem>
+    <MudItem xs="12" sm="4">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.subtitle2">Psi</MudText>
+            <MudText Typo="Typo.h5">@Dogs</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="4">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.subtitle2">Mačke</MudText>
+            <MudText Typo="Typo.h5">@Cats</MudText>
+        </MudPaper>
+    </MudItem>
 </MudGrid>
 
 <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined" Class="mb-4">
@@ -49,6 +61,7 @@
         <MudTh>Spol</MudTh>
         <MudTh>Starost</MudTh>
         <MudTh>Datum dolaska</MudTh>
+        <MudTh>Opis</MudTh>
         <MudTh>Status</MudTh>
     </HeaderContent>
     <RowTemplate>
@@ -63,6 +76,7 @@
         <MudTd DataLabel="Spol">@context.Gender</MudTd>
         <MudTd DataLabel="Starost">@GetAgeText(context)</MudTd>
         <MudTd DataLabel="Datum dolaska">@GetArrivalDateText(context)</MudTd>
+        <MudTd DataLabel="Opis">@context.Description</MudTd>
         <MudTd DataLabel="Status">
             <MudChip T="string"
                      Color="@(context.IsAdopted ? Color.Success : Color.Warning)"
@@ -174,6 +188,11 @@
         private int AnimalsInShelter => animals.Count(animal => !animal.IsAdopted);
 
         private int AdoptedAnimals => animals.Count(animal => animal.IsAdopted);
+
+        private int Dogs => animals.Count(animal => animal.Species=="Pas");
+
+        private int Cats => animals.Count(animal => animal.Species=="Mačka");
+
    
 
         private string GetAgeText(Animal animal)
