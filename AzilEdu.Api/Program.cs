@@ -2,6 +2,7 @@ using AzilEdu.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using AzilEdu.Shared.Models;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -124,6 +125,91 @@ using (var scope = app.Services.CreateScope())
             }
         );
 
+
+            await db.SaveChangesAsync();
+    }
+    if (!await db.HousingUnits.AnyAsync())
+    {
+        db.HousingUnits.AddRange(
+        new HousingUnit
+        {
+            Id = 1,
+            Name = "Boks A1",
+            UnitType = "Boks za pse",
+            Capacity = 4,
+            Occupied = 4,
+            LastCleanedAt = DateTime.Now.AddDays(-1),
+            IsActive = true,
+            ImageUrl = "/images/units/box-1.webp",
+            Note = "Veliki boks za pse"
+        },
+
+        new HousingUnit
+        {
+            Id = 2,
+            Name = "Boks B2",
+            UnitType = "Boks za pse",
+            Capacity = 3,
+            Occupied = 1,
+            LastCleanedAt = DateTime.Now.AddDays(-3),
+            IsActive = true,
+            ImageUrl = "/images/units/box-2.jpg",
+            Note = "Mirniji smještaj za manjeg psa"
+        },
+
+        new HousingUnit
+        {
+            Id = 3,
+            Name = "Mačji prostor M1",
+            UnitType = "Prostor za mačke",
+            Capacity = 6,
+            Occupied = 3,
+            LastCleanedAt = DateTime.Now.AddDays(-2),
+            IsActive = true,
+            ImageUrl = "/images/units/cat-room.jpg",
+            Note = "Odvojeni prostor s penjalicama"
+        },
+
+        new HousingUnit
+        {
+            Id = 4,
+            Name = "Karantena K1",
+            UnitType = "Karantena",
+            Capacity = 2,
+            Occupied = 1,
+            LastCleanedAt = null,
+            IsActive = true,
+            ImageUrl = "/images/units/quarantine.webp",
+            Note = "Čeka dezinfekciju"
+        },
+
+        new HousingUnit
+        {
+            Id = 5,
+            Name = "Privremeni smještaj P1",
+            UnitType = "Privremeni smještaj",
+            Capacity = 5,
+            Occupied = 0,
+            LastCleanedAt = DateTime.Now.AddDays(-7),
+            IsActive = false,
+            ImageUrl = "/images/units/inactive-unit.webp",
+            Note = "Trenutno izvan uporabe"
+        },
+
+        new HousingUnit
+        {
+            Id = 6,
+            Name = "Boks C3",
+            UnitType = "Boks za pse",
+            Capacity = 2,
+            Occupied = 2,
+            LastCleanedAt = DateTime.Now.AddDays(-5),
+            IsActive = true,
+            ImageUrl = "/images/units/yard-unit.jpg",
+            Note = "Mali boks za dva psa"
+        }
+
+        );
         await db.SaveChangesAsync();
     }
 }
