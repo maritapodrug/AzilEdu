@@ -100,4 +100,39 @@ public class AnimalsController : ControllerBase
 
         return CreatedAtAction(nameof(GetAnimalById), new { id = animal.Id }, result);
     }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateAnimal(int id, SaveAnimalDto dto)
+    {
+        var animal = await _context.Animals.FindAsync(id);
+
+        if (animal is null)
+            return NotFound();
+
+        animal.Name = dto.Name;
+        animal.Species = dto.Species;
+        animal.Breed = dto.Breed;
+        animal.Gender = dto.Gender;
+        animal.Age = dto.Age;
+        animal.ArrivalDate = dto.ArrivalDate;
+        animal.IsAdopted = dto.IsAdopted;
+        animal.ImageUrl = dto.ImageUrl;
+        animal.Description = dto.Description;
+
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteAnimal(int id)
+    {
+        var animal = await _context.Animals.FindAsync(id);
+
+        if (animal is null)
+            return NotFound();
+
+        _context.Animals.Remove(animal);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
 }

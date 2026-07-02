@@ -69,6 +69,7 @@
         <MudTh>Datum dolaska</MudTh>
         <MudTh>Opis</MudTh>
         <MudTh>Status</MudTh>
+        <MudTh>Akcije</MudTh>
     </HeaderContent>
     <RowTemplate>
         <MudTd DataLabel="Slika">
@@ -89,6 +90,14 @@
                      Variant="Variant.Filled">
                 @GetAdoptionStatusText(context)
             </MudChip>
+        </MudTd>
+        <MudTd>
+            <MudButton Variant="Variant.Text" Color="Color.Primary" Href="@($"/animals/edit/{context.Id}")">
+                Uredi
+            </MudButton>
+            <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="@(() => DeleteAnimal(context.Id))">
+                Obriši
+            </MudButton>
         </MudTd>
     </RowTemplate>
 </MudTable>
@@ -173,5 +182,15 @@
     private void ShowCats()
     {
         selectedStatus = "Mačke";
+    }
+
+    private async Task DeleteAnimal(int id)
+    {
+        var response = await Http.DeleteAsync($"api/animals/{id}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            animals = animals.Where(a => a.Id != id).ToList();
+        }
     }
 }
