@@ -1,8 +1,7 @@
 ﻿namespace AzilEdu.Shared.DTOs;
 
-public class HousingUnitsDto
+public class SaveHousingUnitDto
 {
-    public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string UnitType { get; set; } = string.Empty;
     public int Capacity { get; set; }
@@ -12,4 +11,3 @@ public class HousingUnitsDto
     public string ImageUrl { get; set; } = string.Empty;
     public string Note { get; set; } = string.Empty;
 }
-
