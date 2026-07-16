@@ -46,8 +46,8 @@ public class AnimalsController : ControllerBase
     public async Task<ActionResult<AnimalDto>> GetAnimalById(int id)
     {
         var animal = await _context.Animals
-         .Include(animal => animal.AnimalStatus)
-         .FirstOrDefaultAsync(animal => animal.Id == id);
+            .Include(animal => animal.AnimalStatus)
+            .FirstOrDefaultAsync(animal => animal.Id == id);
 
         if (animal is null)
             return NotFound();
@@ -61,6 +61,7 @@ public class AnimalsController : ControllerBase
             Gender = animal.Gender,
             Age = animal.Age,
             ArrivalDate = animal.ArrivalDate,
+            AnimalStatusId = animal.AnimalStatusId,
             Status = animal.AnimalStatus != null ? animal.AnimalStatus.Name : string.Empty,
             ImageUrl = animal.ImageUrl,
             Description = animal.Description
@@ -88,18 +89,26 @@ public class AnimalsController : ControllerBase
         _context.Animals.Add(animal);
         await _context.SaveChangesAsync();
 
+        var savedAnimal = await _context.Animals
+            .Include(animal => animal.AnimalStatus)
+            .FirstOrDefaultAsync(animal => animal.Id == animal.Id);
+
+        if (savedAnimal is null)
+            return NotFound();
+
         var result = new AnimalDto
         {
-            Id = animal.Id,
-            Name = animal.Name,
-            Species = animal.Species,
-            Breed = animal.Breed,
-            Gender = animal.Gender,
-            Age = animal.Age,
-            ArrivalDate = animal.ArrivalDate,
-            AnimalStatusId = animal.AnimalStatusId,
-            ImageUrl = animal.ImageUrl,
-            Description = animal.Description
+            Id = savedAnimal.Id,
+            Name = savedAnimal.Name,
+            Species = savedAnimal.Species,
+            Breed = savedAnimal.Breed,
+            Gender = savedAnimal.Gender,
+            Age = savedAnimal.Age,
+            ArrivalDate = savedAnimal.ArrivalDate,
+            AnimalStatusId = savedAnimal.AnimalStatusId,
+            Status = savedAnimal.AnimalStatus != null ? savedAnimal.AnimalStatus.Name : string.Empty,
+            ImageUrl = savedAnimal.ImageUrl,
+            Description = savedAnimal.Description
         };
 
         return CreatedAtAction(nameof(GetAnimalById), new { id = animal.Id }, result);
@@ -126,6 +135,7 @@ public class AnimalsController : ControllerBase
         await _context.SaveChangesAsync();
         return NoContent();
     }
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteAnimal(int id)
     {

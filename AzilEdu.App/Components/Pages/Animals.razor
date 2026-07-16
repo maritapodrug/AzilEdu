@@ -4,55 +4,10 @@
 @using System.Net.Http.Json
 @inject HttpClient Http
 
-
-<MudText Typo="Typo.h3" GutterBottom="true">
-    Animals
-</MudText>
-
+<MudText Typo="Typo.h4" GutterBottom="true">Životinje</MudText>
 <MudText Typo="Typo.body1" Class="mb-4">
-    Pregled životinja koje se nalaze u sustavu azila.
+    Na ovoj stranici prikazujemo životinje koje dolaze iz baze preko API-ja i DTO objekata.
 </MudText>
-
-<MudGrid Class="mb-4">
-    <MudItem xs="12" sm="4">
-        <MudPaper Class="pa-4">
-            <MudText Typo="Typo.subtitle2">Ukupno životinja</MudText>
-            <MudText Typo="Typo.h5">@TotalAnimals</MudText>
-        </MudPaper>
-    </MudItem>
-    <MudItem xs="12" sm="4">
-        <MudPaper Class="pa-4">
-            <MudText Typo="Typo.subtitle2">U azilu</MudText>
-            <MudText Typo="Typo.h5">@AnimalsInShelter</MudText>
-        </MudPaper>
-    </MudItem>
-    <MudItem xs="12" sm="4">
-        <MudPaper Class="pa-4">
-            <MudText Typo="Typo.subtitle2">Udomljene</MudText>
-            <MudText Typo="Typo.h5">@AdoptedAnimals</MudText>
-        </MudPaper>
-    </MudItem>
-    <MudItem xs="12" sm="4">
-        <MudPaper Class="pa-4">
-            <MudText Typo="Typo.subtitle2">Psi</MudText>
-            <MudText Typo="Typo.h5">@Dogs</MudText>
-        </MudPaper>
-    </MudItem>
-    <MudItem xs="12" sm="4">
-        <MudPaper Class="pa-4">
-            <MudText Typo="Typo.subtitle2">Mačke</MudText>
-            <MudText Typo="Typo.h5">@Cats</MudText>
-        </MudPaper>
-    </MudItem>
-</MudGrid>
-
-<MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined" Class="mb-4">
-    <MudButton OnClick="@ShowAllAnimals">Sve</MudButton>
-    <MudButton OnClick="@ShowAnimalsInShelter">U azilu</MudButton>
-    <MudButton OnClick="@ShowAdoptedAnimals">Udomljene</MudButton>
-    <MudButton OnClick="@ShowDogs">Psi</MudButton>
-    <MudButton OnClick="@ShowCats">Mačke</MudButton>
-</MudButtonGroup>
 
 <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/animals/create" Class="mb-4">
     Nova životinja
@@ -69,7 +24,7 @@
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search" />
         </MudItem>
- 
+
         <MudItem xs="12" md="3">
             <MudSelect T="string"
                        Label="Vrsta"
@@ -82,20 +37,20 @@
                 <MudSelectItem Value='@("Drugo")'>Drugo</MudSelectItem>
             </MudSelect>
         </MudItem>
- 
+
         <MudItem xs="12" md="3">
-        <MudSelect T="string"
-                   Label="Status"
-                   @bind-Value="selectedStatus"
-                   Variant="Variant.Outlined"
-                   Clearable="true">
-            @foreach (var status in statusList)
-            {
-                <MudSelectItem Value="@status.Name">@status.Name</MudSelectItem>
-            }
-        </MudSelect>
+            <MudSelect T="string"
+                       Label="Status"
+                       @bind-Value="selectedStatus"
+                       Variant="Variant.Outlined"
+                       Clearable="true">
+                @foreach (var status in statusList)
+                {
+                    <MudSelectItem Value="@status.Name">@status.Name</MudSelectItem>
+                }
+            </MudSelect>
         </MudItem>
- 
+
         <MudItem xs="12" md="2" Class="d-flex align-center">
             <MudButton Variant="Variant.Outlined"
                        Color="Color.Secondary"
@@ -107,23 +62,24 @@
     </MudGrid>
 </MudPaper>
 
-<MudTable Items="@animals" Filter="FilterAnimals" Hover="true" Striped="true" Bordered="true" Dense="true">
-<NoRecordsContent>
-    <MudText Typo="Typo.body1" Class="pa-4">
-        Nema rezultata za zadane kriterije pretrage i filtera.
-    </MudText>
-</NoRecordsContent>
-<HeaderContent>
-    <MudTh>Slika</MudTh>
-    <MudTh><MudTableSortLabel SortBy="new Func<AnimalDto, object>(x => x.Name)">Ime</MudTableSortLabel></MudTh>
-    <MudTh><MudTableSortLabel SortBy="new Func<AnimalDto, object>(x => x.Species)">Vrsta</MudTableSortLabel></MudTh>
-    <MudTh><MudTableSortLabel SortBy="new Func<AnimalDto, object>(x => x.Breed)">Pasmina</MudTableSortLabel></MudTh>
-    <MudTh>Spol</MudTh>
-    <MudTh><MudTableSortLabel SortBy="new Func<AnimalDto, object>(x => x.Age ?? int.MaxValue)">Dob</MudTableSortLabel></MudTh>
-    <MudTh><MudTableSortLabel SortBy="new Func<AnimalDto, object>(x => x.ArrivalDate ?? DateTime.MaxValue)">Dolazak</MudTableSortLabel></MudTh>
-    <MudTh>Status</MudTh>
-    <MudTh>Akcije</MudTh>
-</HeaderContent>
+<MudTable Items="@animals"
+          Filter="FilterAnimals"
+          Hover="true"
+          Striped="true"
+          Bordered="true"
+          Dense="true">
+    <HeaderContent>
+        <MudTh>Slika</MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<AnimalDto, object>(x => x.Name)">Ime</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<AnimalDto, object>(x => x.Species)">Vrsta</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<AnimalDto, object>(x => x.Breed)">Pasmina</MudTableSortLabel></MudTh>
+        <MudTh>Spol</MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<AnimalDto, object>(x => x.Age ?? int.MaxValue)">Dob</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<AnimalDto, object>(x => x.ArrivalDate ?? DateTime.MaxValue)">Dolazak</MudTableSortLabel></MudTh>
+        <MudTh>Status</MudTh>
+        <MudTh>Akcije</MudTh>
+    </HeaderContent>
+
     <RowTemplate>
         <MudTd DataLabel="Slika">
             <MudAvatar Size="Size.Large">
@@ -134,15 +90,14 @@
         <MudTd DataLabel="Vrsta">@context.Species</MudTd>
         <MudTd DataLabel="Pasmina">@context.Breed</MudTd>
         <MudTd DataLabel="Spol">@context.Gender</MudTd>
-        <MudTd DataLabel="Starost">@GetAgeText(context)</MudTd>
-        <MudTd DataLabel="Datum dolaska">@GetArrivalDateText(context)</MudTd>
-        <MudTd DataLabel="Opis">@context.Description</MudTd>
+        <MudTd DataLabel="Dob">@(context.Age?.ToString() ?? "-")</MudTd>
+        <MudTd DataLabel="Dolazak">@(context.ArrivalDate?.ToShortDateString() ?? "-")</MudTd>
         <MudTd DataLabel="Status">
-        <MudChip T="string" Color="@GetStatusColor(context.Status)">
-            @context.Status
-        </MudChip>
+            <MudChip T="string" Color="@GetStatusColor(context.Status)">
+                @context.Status
+            </MudChip>
         </MudTd>
-        <MudTd>
+        <MudTd DataLabel="Akcije">
             <MudButton Variant="Variant.Text" Color="Color.Primary" Href="@($"/animals/edit/{context.Id}")">
                 Uredi
             </MudButton>
@@ -151,96 +106,74 @@
             </MudButton>
         </MudTd>
     </RowTemplate>
+
+    <NoRecordsContent>
+        <MudText Typo="Typo.body1" Class="pa-4">
+            Nema rezultata za zadane kriterije pretrage i filtera.
+        </MudText>
+    </NoRecordsContent>
 </MudTable>
 
 @code {
-        private List<AnimalDto> animals = new();
+    private List<AnimalDto> animals = new();
+    private string searchString = string.Empty;
+    private string? selectedSpecies;
+    private List<LookupDto> statusList = new();
+    private string? selectedStatus;
 
-        private string searchString = string.Empty;
+    protected override async Task OnInitializedAsync()
+    {
+        animals = await Http.GetFromJsonAsync<List<AnimalDto>>("api/animals") ?? new();
+        statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/animalstatuses") ?? new();
+    }
 
-        private string? selectedSpecies;
-        
-        private List<LookupDto> statusList = new();
-
-        private string? selectedStatus;
-
-        private int TotalAnimals => animals.Count;
-
-        private int AnimalsInShelter => animals.Count(animal => !animal.IsAdopted);
-
-        private int AdoptedAnimals => animals.Count(animal => animal.IsAdopted);
-
-        private int Dogs => animals.Count(animal => animal.Species=="Pas");
-
-        private int Cats => animals.Count(animal => animal.Species=="Mačka");
-
-        protected override async Task OnInitializedAsync()
+    private bool FilterAnimals(AnimalDto animal)
+    {
+        if (!string.IsNullOrWhiteSpace(searchString))
         {
-            animals = await Http.GetFromJsonAsync<List<AnimalDto>>("api/animals") ?? new();
-            statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/animalstatuses") ?? new();
+            var term = searchString.Trim().ToLower();
+
+            var matchesSearch =
+                            (!string.IsNullOrWhiteSpace(animal.Name) && animal.Name.ToLower().Contains(term)) ||
+                            (!string.IsNullOrWhiteSpace(animal.Breed) && animal.Breed.ToLower().Contains(term)) ||
+                            (!string.IsNullOrWhiteSpace(animal.Description) && animal.Description.ToLower().Contains(term));
+
+            if (!matchesSearch)
+                return false;
         }
-  
-        private string GetAgeText(AnimalDto animal)
+
+        if (!string.IsNullOrWhiteSpace(selectedSpecies))
         {
-            if (animal.Age.HasValue)
+            if (selectedSpecies == "Drugo")
             {
-                return $"{animal.Age.Value} god.";
+                var isOtherSpecies =
+                    !string.Equals(animal.Species, "Pas", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(animal.Species, "Mačka", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(animal.Species, "Ptica", StringComparison.OrdinalIgnoreCase);
+
+                if (!isOtherSpecies)
+                    return false;
             }
-
-            return "Nepoznato";
-        }
-
-        private string GetArrivalDateText(AnimalDto animal)
-        {
-            if (animal.ArrivalDate.HasValue)
+            else if (!string.Equals(animal.Species, selectedSpecies, StringComparison.OrdinalIgnoreCase))
             {
-                return animal.ArrivalDate.Value.ToShortDateString();
+                return false;
             }
-
-            return "Nije uneseno";
         }
 
-        private string GetAdoptionStatusText(AnimalDto animal)
+        if (!string.IsNullOrWhiteSpace(selectedStatus) &&
+                    !string.Equals(animal.Status, selectedStatus, StringComparison.OrdinalIgnoreCase))
         {
-            if (animal.IsAdopted)
-            {
-                return "Udomljen/a";
-            }
-
-            return "U azilu";
+            return false;
         }
-    
-    private string selectedStatus = "Sve";
 
-    private IEnumerable<AnimalDto> FilteredAnimals =>
-       selectedStatus switch
-       {
-           "U azilu" => animals.Where(animal => !animal.IsAdopted),
-           "Udomljene" => animals.Where(animal => animal.IsAdopted),
-           "Psi" => animals.Where(animal => animal.Species == "Pas"),
-           "Mačke" => animals.Where(animal => animal.Species == "Mačka"),
-           _ => animals
-       };
+        return true;
+    }
 
-    private void ShowAllAnimals()
+    private void ResetFilters()
     {
-        selectedStatus = "Sve";
-    }
-    private void ShowAnimalsInShelter()
-    {
-        selectedStatus = "U azilu";
-    }
-    private void ShowAdoptedAnimals()
-    {
-        selectedStatus = "Udomljene";
-    }
-    private void ShowDogs()
-    {
-        selectedStatus = "Psi";
-    }
-    private void ShowCats()
-    {
-        selectedStatus = "Mačke";
+        searchString = string.Empty;
+        selectedSpecies = null;
+        selectedStatus = null;
     }
 
     private async Task DeleteAnimal(int id)
@@ -253,63 +186,15 @@
         }
     }
 
-    private bool FilterAnimals(AnimalDto animal)
-{
-    if (!string.IsNullOrWhiteSpace(searchString))
+    private Color GetStatusColor(string status)
     {
-        var term = searchString.Trim().ToLower();
- 
-        var matchesSearch =
-            (!string.IsNullOrWhiteSpace(animal.Name) && animal.Name.ToLower().Contains(term)) ||
-            (!string.IsNullOrWhiteSpace(animal.Breed) && animal.Breed.ToLower().Contains(term)) ||
-            (!string.IsNullOrWhiteSpace(animal.Description) && animal.Description.ToLower().Contains(term));
- 
-        if (!matchesSearch)
-            return false;
+        return status switch
+        {
+            "Dostupna za udomljenje" => Color.Success,
+            "Rezervirana" => Color.Info,
+            "Udomljena" => Color.Secondary,
+            "Na liječenju" => Color.Warning,
+            _ => Color.Default
+        };
     }
- 
-    if (!string.IsNullOrWhiteSpace(selectedSpecies))
-    {
-        if (selectedSpecies == "Drugo")
-        {
-            var isOtherSpecies =
-                !string.Equals(animal.Species, "Pas", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(animal.Species, "Mačka", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(animal.Species, "Ptica", StringComparison.OrdinalIgnoreCase);
- 
-            if (!isOtherSpecies)
-                return false;
-        }
-        else if (!string.Equals(animal.Species, selectedSpecies, StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-    }
- 
-        if (!string.IsNullOrWhiteSpace(selectedStatus) &&
-            !string.Equals(animal.Status, selectedStatus, StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
- 
-    return true;
-}
-
-private void ResetFilters()
-{
-    searchString = string.Empty;
-    selectedSpecies = null;
-    selectedStatus = null;
-}
-private Color GetStatusColor(string status)
-{
-    return status switch
-    {
-        "Dostupna za udomljenje" => Color.Success,
-        "Rezervirana" => Color.Info,
-        "Udomljena" => Color.Secondary,
-        "Na liječenju" => Color.Warning,
-        _ => Color.Default
-    };
-}
 }
