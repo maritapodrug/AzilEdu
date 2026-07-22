@@ -1,0 +1,229 @@
+﻿@page "/volunteer-tasks"
+@rendermode InteractiveServer
+@using AzilEdu.Shared.DTOs
+@using System.Net.Http.Json
+@using MudBlazor
+@inject HttpClient Http
+@inject IDialogService DialogService
+
+<PageTitle>Volonterski zadaci</PageTitle>
+<MudText Typo="Typo.h4" Class="mb-4">Volonterski zadaci</MudText>
+
+@if (!string.IsNullOrWhiteSpace(successMessage))
+{
+    <MudAlert Severity="Severity.Success" Class="mb-4" ShowCloseIcon="true"
+              CloseIconClicked="@(() => successMessage = null)">@successMessage</MudAlert>
+}
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
+}
+
+<MudPaper Class="pa-4 mb-4">
+    <MudGrid>
+        <MudItem xs="12" md="3">
+            <MudTextField Label="Pretraga" @bind-Value="searchString" Immediate="true"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
+        </MudItem>
+        <MudItem xs="12" md="2">
+            <MudSelect T="int?" Label="Status" @bind-Value="selectedStatusId" Clearable="true">
+                @foreach (var s in statuses)
+                {
+                    <MudSelectItem T="int?" Value="@((int?)s.Id)">@s.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="2">
+            <MudSelect T="int?" Label="Tip zadatka" @bind-Value="selectedTypeId" Clearable="true">
+                @foreach (var t in types)
+                {
+                    <MudSelectItem T="int?" Value="@((int?)t.Id)">@t.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="2">
+            <MudSelect T="int?" Label="Volonter" @bind-Value="selectedVolunteerId" Clearable="true">
+                @foreach (var v in volunteers)
+                {
+                    <MudSelectItem T="int?" Value="@((int?)v.Id)">@v.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudDateRangePicker @bind-DateRange="dateRange" Label="Rok od/do" />
+        </MudItem>
+    </MudGrid>
+    <MudStack Row="true" Spacing="2" Class="mt-4">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadTasks"
+                   StartIcon="@Icons.Material.Filled.FilterList">Primijeni</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="ResetFilters"
+                   StartIcon="@Icons.Material.Filled.Refresh">Reset</MudButton>
+    </MudStack>
+</MudPaper>
+
+@if (isLoading)
+{
+    <div class="d-flex justify-center my-6">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </div>
+}
+else
+{
+    <MudButton Href="/volunteer-tasks/create" Variant="Variant.Filled" Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Add" Class="mb-4">Novi zadatak</MudButton>
+
+    <MudTable Items="FilteredTasks" Hover="true" Dense="true">
+        <HeaderContent>
+            <MudTh>Naslov</MudTh>
+            <MudTh>Tip</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Volonter</MudTh>
+            <MudTh>Životinja</MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<VolunteerTaskDto, object>(x => x.DueDate ?? DateTime.MaxValue)">Rok</MudTableSortLabel></MudTh>
+            <MudTh>Akcije</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Naslov">@context.Title</MudTd>
+            <MudTd DataLabel="Tip">@context.Type</MudTd>
+            <MudTd DataLabel="Status">
+                <MudChip T="string" Color="@GetStatusColor(context.Status)">@context.Status</MudChip>
+            </MudTd>
+            <MudTd DataLabel="Volonter">
+                @(string.IsNullOrWhiteSpace(context.VolunteerName) ? "Nije dodijeljen" : context.VolunteerName)
+            </MudTd>
+            <MudTd DataLabel="Životinja">
+                @(string.IsNullOrWhiteSpace(context.AnimalName) ? "Nije vezano uz životinju" : context.AnimalName)
+            </MudTd>
+            <MudTd DataLabel="Rok">
+                @if (context.DueDate.HasValue)
+                {
+                    @context.DueDate.Value.ToString("dd.MM.yyyy.")
+                    @if (IsOverdue(context))
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Error">ROK PROŠAO</MudChip>
+                    }
+                }
+                else
+                {
+                    <text>-</text>
+                }
+            </MudTd>
+            <MudTd DataLabel="Akcije">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary"
+                               Href="@($"/volunteer-tasks/edit/{context.Id}")" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                               OnClick="@(() => ConfirmDelete(context.Id))" />
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Typo="Typo.body1" Class="pa-4">Nema zadataka za zadane kriterije.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+}
+
+@code {
+    private List<VolunteerTaskDto> tasks = new();
+    private List<LookupDto> statuses = new();
+    private List<LookupDto> types = new();
+    private List<LookupDto> volunteers = new();
+
+    private string searchString = string.Empty;
+    private int? selectedStatusId;
+    private int? selectedTypeId;
+    private int? selectedVolunteerId;
+    private DateRange? dateRange;
+
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string? successMessage;
+
+    private IEnumerable<VolunteerTaskDto> FilteredTasks => tasks.Where(TaskMatchesSearch);
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            statuses   = await Http.GetFromJsonAsync<List<LookupDto>>("api/volunteertaskstatuses") ?? new();
+            types      = await Http.GetFromJsonAsync<List<LookupDto>>("api/volunteertasktypes")    ?? new();
+            volunteers = await Http.GetFromJsonAsync<List<LookupDto>>("api/volunteers/lookup")     ?? new();
+            await LoadTasks();
+        }
+        catch (Exception ex) { errorMessage = $"Greška kod učitavanja: {ex.Message}"; isLoading = false; }
+    }
+
+    private async Task LoadTasks()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+            var q = new List<string>();
+            if (selectedStatusId.HasValue)    q.Add($"statusId={selectedStatusId.Value}");
+            if (selectedTypeId.HasValue)      q.Add($"typeId={selectedTypeId.Value}");
+            if (selectedVolunteerId.HasValue) q.Add($"volunteerId={selectedVolunteerId.Value}");
+            if (dateRange?.Start.HasValue == true) q.Add($"dateFrom={dateRange.Start.Value:yyyy-MM-dd}");
+            if (dateRange?.End.HasValue == true)   q.Add($"dateTo={dateRange.End.Value:yyyy-MM-dd}");
+            var url = "api/volunteertasks" + (q.Count > 0 ? "?" + string.Join("&", q) : "");
+            tasks = await Http.GetFromJsonAsync<List<VolunteerTaskDto>>(url) ?? new();
+        }
+        catch (Exception ex) { errorMessage = $"Greška kod dohvaćanja: {ex.Message}"; }
+        finally { isLoading = false; }
+    }
+
+    private async Task ResetFilters()
+    {
+        searchString = string.Empty;
+        selectedStatusId = null;
+        selectedTypeId = null;
+        selectedVolunteerId = null;
+        dateRange = null;
+        await LoadTasks();
+    }
+
+    private bool TaskMatchesSearch(VolunteerTaskDto t)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        var term = searchString.Trim().ToLower();
+        return t.Title.Contains(term, StringComparison.OrdinalIgnoreCase)
+            || t.Description.Contains(term, StringComparison.OrdinalIgnoreCase)
+            || t.Type.Contains(term, StringComparison.OrdinalIgnoreCase)
+            || t.VolunteerName.Contains(term, StringComparison.OrdinalIgnoreCase)
+            || t.AnimalName.Contains(term, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsOverdue(VolunteerTaskDto t) =>
+        t.DueDate.HasValue &&
+        t.DueDate.Value.Date < DateTime.Today &&
+        t.Status != "Završeno" && t.Status != "Otkazano";
+
+    private async Task ConfirmDelete(int id)
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Potvrda brisanja", options);
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled)
+            await DeleteTask(id);
+    }
+
+    private async Task DeleteTask(int id)
+    {
+        try
+        {
+            var response = await Http.DeleteAsync($"api/volunteertasks/{id}");
+            if (!response.IsSuccessStatusCode) { errorMessage = "Zadatak nije moguće obrisati."; return; }
+            successMessage = "Zadatak je uspješno obrisan.";
+            await LoadTasks();
+        }
+        catch (Exception ex) { errorMessage = $"Greška kod brisanja: {ex.Message}"; }
+    }
+
+    private static Color GetStatusColor(string status) => status switch
+    {
+        "Otvoren"   => Color.Info,
+        "Dodijeljen" => Color.Primary,
+        "U tijeku"  => Color.Warning,
+        "Završeno"  => Color.Success,
+        "Otkazano"  => Color.Error,
+        _           => Color.Default
+    };
+}

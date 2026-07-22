@@ -1,0 +1,142 @@
+@page "/donations/edit/{Id:int}"
+@rendermode InteractiveServer
+@using AzilEdu.Shared.DTOs
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Uredi donaciju</PageTitle>
+<MudText Typo="Typo.h4" GutterBottom="true">Uredi donaciju</MudText>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
+}
+@if (isLoading)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudPaper Class="pa-4">
+        <MudGrid>
+            <MudItem xs="12" md="4">
+                <MudSelect T="int" Label="Donator *" @bind-Value="model.DonorId"
+                           Variant="Variant.Outlined" Required="true">
+                    @foreach (var d in donors)
+                    {
+                        <MudSelectItem Value="@d.Id">@d.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudSelect T="int" Label="Tip donacije *" @bind-Value="model.DonationTypeId"
+                           Variant="Variant.Outlined" Required="true">
+                    @foreach (var t in types)
+                    {
+                        <MudSelectItem Value="@t.Id">@t.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudSelect T="int" Label="Status *" @bind-Value="model.DonationStatusId"
+                           Variant="Variant.Outlined" Required="true">
+                    @foreach (var s in statuses)
+                    {
+                        <MudSelectItem Value="@s.Id">@s.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudDatePicker Label="Datum donacije *" @bind-Date="donationDate" />
+            </MudItem>
+
+            @if (IsMonetary)
+            {
+                <MudItem xs="12" md="4">
+                    <MudNumericField T="decimal?" Label="Iznos (€)" @bind-Value="model.Amount" Immediate="true" />
+                </MudItem>
+            }
+            else
+            {
+                <MudItem xs="12" md="4">
+                    <MudTextField Label="Naziv predmeta" @bind-Value="model.ItemName" Immediate="true" />
+                </MudItem>
+                <MudItem xs="12" md="2">
+                    <MudNumericField T="decimal?" Label="Količina" @bind-Value="model.Quantity" Immediate="true" />
+                </MudItem>
+                <MudItem xs="12" md="2">
+                    <MudNumericField T="decimal?" Label="Procijenjena vrijednost (€)" @bind-Value="model.EstimatedValue" Immediate="true" />
+                </MudItem>
+            }
+
+            <MudItem xs="12">
+                <MudTextField Label="Napomena" @bind-Value="model.Notes" Lines="3" Immediate="true" />
+            </MudItem>
+        </MudGrid>
+
+        <MudStack Row="true" Spacing="2" Class="mt-4">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="UpdateDonation">Spremi promjene</MudButton>
+            <MudButton Variant="Variant.Text" Href="/donations">Odustani</MudButton>
+        </MudStack>
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private SaveDonationDto model = new();
+    private DateTime? donationDate;
+    private List<LookupDto> donors = new();
+    private List<LookupDto> types = new();
+    private List<LookupDto> statuses = new();
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    private bool IsMonetary =>
+        types.FirstOrDefault(t => t.Id == model.DonationTypeId)?.Name == "Novčana";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            donors   = await Http.GetFromJsonAsync<List<LookupDto>>("api/donors/lookup")   ?? new();
+            types    = await Http.GetFromJsonAsync<List<LookupDto>>("api/donationtypes")   ?? new();
+            statuses = await Http.GetFromJsonAsync<List<LookupDto>>("api/donationstatuses") ?? new();
+
+            var donation = await Http.GetFromJsonAsync<DonationDto>($"api/donations/{Id}");
+            if (donation is null) { errorMessage = "Donacija nije pronađena."; return; }
+
+            model = new SaveDonationDto
+            {
+                DonorId          = donation.DonorId,
+                DonationTypeId   = donation.DonationTypeId,
+                DonationStatusId = donation.DonationStatusId,
+                DonationDate     = donation.DonationDate,
+                Amount           = donation.Amount,
+                ItemName         = donation.ItemName,
+                Quantity         = donation.Quantity,
+                EstimatedValue   = donation.EstimatedValue,
+                Notes            = donation.Notes
+            };
+            donationDate = donation.DonationDate;
+        }
+        catch (Exception ex) { errorMessage = $"Greška kod učitavanja: {ex.Message}"; }
+        finally { isLoading = false; }
+    }
+
+    private async Task UpdateDonation()
+    {
+        errorMessage = null;
+        if (model.DonorId == 0)          { errorMessage = "Odaberi donatora."; return; }
+        if (model.DonationTypeId == 0)   { errorMessage = "Odaberi tip donacije."; return; }
+        if (model.DonationStatusId == 0) { errorMessage = "Odaberi status."; return; }
+        if (donationDate is null)        { errorMessage = "Datum donacije je obavezan."; return; }
+
+        model.DonationDate = donationDate.Value;
+
+        var response = await Http.PutAsJsonAsync($"api/donations/{Id}", model);
+        if (response.IsSuccessStatusCode) { Navigation.NavigateTo("/donations"); return; }
+        errorMessage = $"Ažuriranje nije uspjelo. Status: {(int)response.StatusCode}";
+    }
+}

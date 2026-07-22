@@ -17,6 +17,17 @@ public class AnimalsController : ControllerBase
         _context = context;
     }
 
+    [HttpGet("lookup")]
+    public async Task<ActionResult<List<LookupDto>>> GetAnimalsLookup()
+    {
+        var result = await _context.Animals
+            .OrderBy(a => a.Name)
+            .Select(a => new LookupDto { Id = a.Id, Name = a.Name })
+            .ToListAsync();
+
+        return Ok(result);
+    }
+
     [HttpGet]
     public async Task<ActionResult<List<AnimalDto>>> GetAnimals()
     {

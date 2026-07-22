@@ -3,6 +3,7 @@ using System;
 using AzilEdu.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AzilEdu.Api.Migrations
 {
     [DbContext(typeof(AzilEduDbContext))]
-    partial class AzilEduDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260722144550_AddVolunteerTasks")]
+    partial class AddVolunteerTasks
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
@@ -97,214 +100,6 @@ namespace AzilEdu.Api.Migrations
                         {
                             Id = 4,
                             Name = "Na liječenju"
-                        });
-                });
-
-            modelBuilder.Entity("AzilEdu.Shared.Models.Donation", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<decimal?>("Amount")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("DonationDate")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("DonationStatusId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("DonationTypeId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("DonorId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<decimal?>("EstimatedValue")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ItemName")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Notes")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal?>("Quantity")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DonationStatusId");
-
-                    b.HasIndex("DonationTypeId");
-
-                    b.HasIndex("DonorId");
-
-                    b.ToTable("Donations");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            DonationDate = new DateTime(2024, 4, 5, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DonationStatusId = 3,
-                            DonationTypeId = 2,
-                            DonorId = 1,
-                            EstimatedValue = 750m,
-                            ItemName = "Suha hrana za pse",
-                            Notes = "Donirao 50 kg hrane",
-                            Quantity = 50m
-                        },
-                        new
-                        {
-                            Id = 2,
-                            DonationDate = new DateTime(2024, 6, 12, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DonationStatusId = 2,
-                            DonationTypeId = 3,
-                            DonorId = 2,
-                            EstimatedValue = 1500m,
-                            ItemName = "Kavezi i povodci",
-                            Notes = "Oprema za prihvat novih životinja",
-                            Quantity = 10m
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Amount = 500m,
-                            DonationDate = new DateTime(2024, 9, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DonationStatusId = 2,
-                            DonationTypeId = 1,
-                            DonorId = 1,
-                            ItemName = "",
-                            Notes = "Novčana donacija za veterinara"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            DonationDate = new DateTime(2024, 10, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DonationStatusId = 2,
-                            DonationTypeId = 5,
-                            DonorId = 4,
-                            EstimatedValue = 800m,
-                            ItemName = "Edukacija volontera",
-                            Notes = "Udruga organizirala edukaciju"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            DonationDate = new DateTime(2025, 2, 14, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DonationStatusId = 1,
-                            DonationTypeId = 2,
-                            DonorId = 3,
-                            EstimatedValue = 400m,
-                            ItemName = "Mokra hrana za mačke",
-                            Notes = "Doneseno osobno",
-                            Quantity = 100m
-                        },
-                        new
-                        {
-                            Id = 6,
-                            DonationDate = new DateTime(2025, 4, 3, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DonationStatusId = 2,
-                            DonationTypeId = 3,
-                            DonorId = 6,
-                            EstimatedValue = 600m,
-                            ItemName = "Igračke i posteljine",
-                            Notes = "Sezonska donacija opreme",
-                            Quantity = 20m
-                        },
-                        new
-                        {
-                            Id = 7,
-                            Amount = 200m,
-                            DonationDate = new DateTime(2026, 4, 5, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DonationStatusId = 1,
-                            DonationTypeId = 1,
-                            DonorId = 5,
-                            ItemName = "",
-                            Notes = "Prva donacija novog donatora"
-                        });
-                });
-
-            modelBuilder.Entity("AzilEdu.Shared.Models.DonationStatus", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("DonationStatuses");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "Evidentirana"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "Potvrđena"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Name = "Iskorištena"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Name = "Otkazana"
-                        });
-                });
-
-            modelBuilder.Entity("AzilEdu.Shared.Models.DonationType", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("DonationTypes");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "Novčana"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "Hrana"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Name = "Oprema"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Name = "Lijekovi"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Name = "Usluga"
                         });
                 });
 
@@ -1089,33 +884,6 @@ namespace AzilEdu.Api.Migrations
                     b.Navigation("AnimalStatus");
                 });
 
-            modelBuilder.Entity("AzilEdu.Shared.Models.Donation", b =>
-                {
-                    b.HasOne("AzilEdu.Shared.Models.DonationStatus", "DonationStatus")
-                        .WithMany("Donations")
-                        .HasForeignKey("DonationStatusId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("AzilEdu.Shared.Models.DonationType", "DonationType")
-                        .WithMany("Donations")
-                        .HasForeignKey("DonationTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("AzilEdu.Shared.Models.Donor", "Donor")
-                        .WithMany()
-                        .HasForeignKey("DonorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("DonationStatus");
-
-                    b.Navigation("DonationType");
-
-                    b.Navigation("Donor");
-                });
-
             modelBuilder.Entity("AzilEdu.Shared.Models.Donor", b =>
                 {
                     b.HasOne("AzilEdu.Shared.Models.DonorStatus", "DonorStatus")
@@ -1201,16 +969,6 @@ namespace AzilEdu.Api.Migrations
             modelBuilder.Entity("AzilEdu.Shared.Models.AnimalStatus", b =>
                 {
                     b.Navigation("Animals");
-                });
-
-            modelBuilder.Entity("AzilEdu.Shared.Models.DonationStatus", b =>
-                {
-                    b.Navigation("Donations");
-                });
-
-            modelBuilder.Entity("AzilEdu.Shared.Models.DonationType", b =>
-                {
-                    b.Navigation("Donations");
                 });
 
             modelBuilder.Entity("AzilEdu.Shared.Models.DonorStatus", b =>

@@ -1,0 +1,138 @@
+@page "/donors/edit/{Id:int}"
+@rendermode InteractiveServer
+@using AzilEdu.Shared.DTOs
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Uredi donatora</PageTitle>
+<MudText Typo="Typo.h4" GutterBottom="true">Uredi donatora</MudText>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
+}
+
+@if (isLoading)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudPaper Class="pa-4">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="model.FirstName" Label="Ime" Immediate="true" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="model.LastName" Label="Prezime" Immediate="true" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="model.OrganizationName" Label="Naziv organizacije" Immediate="true" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="model.Email" Label="Email" Immediate="true" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="model.Phone" Label="Telefon" Immediate="true" />
+            </MudItem>
+            <MudItem xs="12" md="8">
+                <MudTextField @bind-Value="model.Address" Label="Adresa" Immediate="true" />
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudTextField @bind-Value="model.City" Label="Grad" Immediate="true" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudSelect T="int" Label="Tip donatora" @bind-Value="model.DonorTypeId"
+                           Variant="Variant.Outlined" Required="true">
+                    @foreach (var t in types)
+                    {
+                        <MudSelectItem Value="@t.Id">@t.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudSelect T="int" Label="Status" @bind-Value="model.DonorStatusId"
+                           Variant="Variant.Outlined" Required="true">
+                    @foreach (var s in statuses)
+                    {
+                        <MudSelectItem Value="@s.Id">@s.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="model.Notes" Label="Napomena" Lines="3" Immediate="true" />
+            </MudItem>
+        </MudGrid>
+
+        <MudStack Row="true" Spacing="2" Class="mt-4">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="UpdateDonor">
+                Spremi promjene
+            </MudButton>
+            <MudButton Variant="Variant.Text" Href="/donors">Odustani</MudButton>
+        </MudStack>
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private SaveDonorDto model = new();
+    private List<LookupDto> types = new();
+    private List<LookupDto> statuses = new();
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            types    = await Http.GetFromJsonAsync<List<LookupDto>>("api/donortypes")    ?? new();
+            statuses = await Http.GetFromJsonAsync<List<LookupDto>>("api/donorstatuses") ?? new();
+
+            var donor = await Http.GetFromJsonAsync<DonorDto>($"api/donors/{Id}");
+
+            if (donor is null) { errorMessage = "Donator nije pronađen."; return; }
+
+            model = new SaveDonorDto
+            {
+                FirstName        = donor.FirstName,
+                LastName         = donor.LastName,
+                OrganizationName = donor.OrganizationName,
+                Email            = donor.Email,
+                Phone            = donor.Phone,
+                Address          = donor.Address,
+                City             = donor.City,
+                Notes            = donor.Notes,
+                CreatedAt        = donor.CreatedAt,
+                DonorTypeId      = donor.DonorTypeId,
+                DonorStatusId    = donor.DonorStatusId
+            };
+        }
+        catch (Exception ex) { errorMessage = $"Greška kod učitavanja: {ex.Message}"; }
+        finally { isLoading = false; }
+    }
+
+    private async Task UpdateDonor()
+    {
+        errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(model.FirstName) &&
+            string.IsNullOrWhiteSpace(model.LastName) &&
+            string.IsNullOrWhiteSpace(model.OrganizationName))
+        {
+            errorMessage = "Upiši ime i prezime ili naziv organizacije.";
+            return;
+        }
+
+        var response = await Http.PutAsJsonAsync($"api/donors/{Id}", model);
+
+        if (response.IsSuccessStatusCode)
+        {
+            Navigation.NavigateTo("/donors");
+            return;
+        }
+
+        errorMessage = $"Ažuriranje nije uspjelo. Status: {(int)response.StatusCode}";
+    }
+}

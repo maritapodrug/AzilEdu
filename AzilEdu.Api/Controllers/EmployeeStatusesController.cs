@@ -1,4 +1,4 @@
-﻿using AzilEdu.Api.Data;
+using AzilEdu.Api.Data;
 using AzilEdu.Shared.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,19 +7,19 @@ namespace AzilEdu.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class DonorStatusesController : ControllerBase
+public class EmployeeStatusesController : ControllerBase
 {
     private readonly AzilEduDbContext _context;
 
-    public DonorStatusesController(AzilEduDbContext context)
+    public EmployeeStatusesController(AzilEduDbContext context)
     {
         _context = context;
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<LookupDto>>> GetDonorStatuses()
+    public async Task<ActionResult<List<LookupDto>>> GetEmployeeStatuses()
     {
-        var result = await _context.DonorStatuses
+        var result = await _context.EmployeeStatuses
             .OrderBy(s => s.Name)
             .Select(s => new LookupDto
             {

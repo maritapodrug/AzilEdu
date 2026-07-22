@@ -7,24 +7,24 @@ namespace AzilEdu.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class DonorStatusesController : ControllerBase
+public class VolunteerTaskTypesController : ControllerBase
 {
     private readonly AzilEduDbContext _context;
 
-    public DonorStatusesController(AzilEduDbContext context)
+    public VolunteerTaskTypesController(AzilEduDbContext context)
     {
         _context = context;
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<LookupDto>>> GetDonorStatuses()
+    public async Task<ActionResult<List<LookupDto>>> GetVolunteerTaskTypes()
     {
-        var result = await _context.DonorStatuses
-            .OrderBy(s => s.Name)
-            .Select(s => new LookupDto
+        var result = await _context.VolunteerTaskTypes
+            .OrderBy(type => type.Id)
+            .Select(type => new LookupDto
             {
-                Id = s.Id,
-                Name = s.Name
+                Id = type.Id,
+                Name = type.Name
             })
             .ToListAsync();
 

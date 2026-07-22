@@ -1,0 +1,140 @@
+﻿@page "/volunteer-tasks/create"
+@rendermode InteractiveServer
+@using AzilEdu.Shared.DTOs
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Novi volonterski zadatak</PageTitle>
+<MudText Typo="Typo.h4" Class="mb-4">Novi volonterski zadatak</MudText>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
+}
+@if (isLoading)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudPaper Class="pa-4">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudTextField Label="Naslov *" @bind-Value="model.Title" Required="true" Immediate="true"
+                              Error="@titleError" ErrorText="Naslov je obavezan." />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField Label="Opis" @bind-Value="model.Description" Lines="4" Immediate="true" />
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudSelect T="int" Label="Status *" @bind-Value="model.VolunteerTaskStatusId"
+                           Required="true" Variant="Variant.Outlined">
+                    @foreach (var s in statuses)
+                    {
+                        <MudSelectItem Value="@s.Id">@s.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudSelect T="int" Label="Tip zadatka *" @bind-Value="model.VolunteerTaskTypeId"
+                           Required="true" Variant="Variant.Outlined">
+                    @foreach (var t in types)
+                    {
+                        <MudSelectItem Value="@t.Id">@t.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudDatePicker Label="Rok" @bind-Date="model.DueDate" />
+            </MudItem>
+            @if (IsCompletedStatus)
+            {
+                <MudItem xs="12" md="4">
+                    <MudDatePicker Label="Datum završetka *" @bind-Date="model.CompletedAt"
+                                   Error="@completedAtError" ErrorText="Datum završetka je obavezan za status Završeno." />
+                </MudItem>
+            }
+            <MudItem xs="12" md="6">
+                <MudSelect T="int?" Label="Volonter" @bind-Value="model.VolunteerId"
+                           Clearable="true" Variant="Variant.Outlined">
+                    @foreach (var v in volunteers)
+                    {
+                        <MudSelectItem T="int?" Value="@((int?)v.Id)">@v.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudSelect T="int?" Label="Životinja" @bind-Value="model.AnimalId"
+                           Clearable="true" Variant="Variant.Outlined">
+                    @foreach (var a in animals)
+                    {
+                        <MudSelectItem T="int?" Value="@((int?)a.Id)">@a.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField Label="Napomena" @bind-Value="model.Notes" Lines="3" Immediate="true" />
+            </MudItem>
+        </MudGrid>
+
+        <MudStack Row="true" Spacing="2" Class="mt-4">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveTask">Spremi</MudButton>
+            <MudButton Variant="Variant.Text" Href="/volunteer-tasks">Odustani</MudButton>
+        </MudStack>
+    </MudPaper>
+}
+
+@code {
+    private SaveVolunteerTaskDto model = new();
+    private List<LookupDto> statuses = new();
+    private List<LookupDto> types = new();
+    private List<LookupDto> volunteers = new();
+    private List<LookupDto> animals = new();
+    private bool isLoading = true;
+    private string? errorMessage;
+    private bool titleError;
+    private bool completedAtError;
+
+    private bool IsCompletedStatus =>
+        statuses.FirstOrDefault(s => s.Id == model.VolunteerTaskStatusId)?.Name == "Završeno";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            statuses   = await Http.GetFromJsonAsync<List<LookupDto>>("api/volunteertaskstatuses") ?? new();
+            types      = await Http.GetFromJsonAsync<List<LookupDto>>("api/volunteertasktypes")    ?? new();
+            volunteers = await Http.GetFromJsonAsync<List<LookupDto>>("api/volunteers/lookup")     ?? new();
+            animals    = await Http.GetFromJsonAsync<List<LookupDto>>("api/animals/lookup")        ?? new();
+            model.VolunteerTaskStatusId = statuses.FirstOrDefault()?.Id ?? 0;
+            model.VolunteerTaskTypeId   = types.FirstOrDefault()?.Id    ?? 0;
+        }
+        catch (Exception ex) { errorMessage = $"Greška kod učitavanja forme: {ex.Message}"; }
+        finally { isLoading = false; }
+    }
+
+    private async Task SaveTask()
+    {
+        titleError       = false;
+        completedAtError = false;
+        errorMessage     = null;
+
+        if (string.IsNullOrWhiteSpace(model.Title))      { titleError = true; return; }
+        if (model.VolunteerTaskStatusId == 0)             { errorMessage = "Odaberi status zadatka."; return; }
+        if (model.VolunteerTaskTypeId   == 0)             { errorMessage = "Odaberi tip zadatka."; return; }
+
+        if (IsCompletedStatus && model.CompletedAt is null)
+        {
+            completedAtError = true;
+            errorMessage = "Za status 'Završeno' obavezan je datum završetka.";
+            return;
+        }
+
+        if (!IsCompletedStatus) model.CompletedAt = null;
+
+        var response = await Http.PostAsJsonAsync("api/volunteertasks", model);
+        if (response.IsSuccessStatusCode) { Navigation.NavigateTo("/volunteer-tasks"); return; }
+        errorMessage = $"Zadatak nije spremljen. Status: {(int)response.StatusCode}";
+    }
+}
