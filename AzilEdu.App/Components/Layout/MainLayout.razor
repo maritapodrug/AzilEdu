@@ -1,4 +1,6 @@
 ﻿@inherits LayoutComponentBase
+@inject AzilEdu.App.Services.CurrentUserService CurrentUser
+@implements IAsyncDisposable
 
 <MudThemeProvider />
 <MudPopoverProvider />
@@ -7,16 +9,47 @@
 
 <MudLayout>
     <MudAppBar Elevation="1" Color="Color.Primary">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       OnClick="ToggleDrawer" />
         <MudText Typo="Typo.h6">AzilEdu</MudText>
         <MudSpacer />
-        <MudText Typo="Typo.body2">Sustav za upravljanje azilom</MudText>
+        <MudText Typo="Typo.body2" Class="d-none d-sm-flex">Sustav za upravljanje azilom</MudText>
     </MudAppBar>
 
-    <MudDrawer Open="true" Elevation="1" Variant="DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always">
+    <MudDrawer @bind-Open="drawerOpen"
+               Elevation="1"
+               Variant="DrawerVariant.Responsive"
+               ClipMode="DrawerClipMode.Always">
         <NavMenu />
     </MudDrawer>
 
-    <MudMainContent Class="pa-6 mt-16">
+    <MudMainContent Class="pa-4 pa-sm-6 mt-16">
         @Body
     </MudMainContent>
 </MudLayout>
+
+@code {
+    private bool drawerOpen = true;
+
+    private void ToggleDrawer()
+    {
+        drawerOpen = !drawerOpen;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            CurrentUser.UserChanged += StateHasChanged;
+            await CurrentUser.InitializeAsync();
+        }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        CurrentUser.UserChanged -= StateHasChanged;
+        return ValueTask.CompletedTask;
+    }
+}

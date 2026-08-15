@@ -10,11 +10,6 @@
     Unesite podatke o novom volonteru i pošaljite ih prema API-ju.
 </MudText>
 
-@if (!string.IsNullOrWhiteSpace(statusMessage))
-{
-    <MudAlert Severity="Severity.Info" Class="mb-4">@statusMessage</MudAlert>
-}
-
 @if (!string.IsNullOrWhiteSpace(errorMessage))
 {
     <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
@@ -44,15 +39,15 @@
     <MudButton ButtonType="ButtonType.Button"
                OnClick="SaveVolunteer"
                Variant="Variant.Filled"
-               Color="Color.Primary">
-        Spremi
+               Color="Color.Primary"
+               Disabled="isSaving">
+        @(isSaving ? "Spremam..." : "Spremi")
     </MudButton>
 </MudStack>
 
 @code {
-    private string? statusMessage;
     private string? errorMessage;
-    private int saveClickCount;
+    private bool isSaving;
 
     private List<LookupDto> statusList = new();
     private SaveVolunteerDto model = new();
@@ -70,12 +65,11 @@
 
     private async Task SaveVolunteer()
     {
+        isSaving = true;
+        errorMessage = null;
+
         try
         {
-            saveClickCount++;
-            statusMessage = $"Klik na spremanje je primljen ({saveClickCount}).";
-            errorMessage = null;
-
             if (string.IsNullOrWhiteSpace(model.FirstName) || string.IsNullOrWhiteSpace(model.LastName))
             {
                 errorMessage = "Upiši barem obavezna polja: ime i prezime.";
@@ -103,6 +97,10 @@
         catch (Exception ex)
         {
             errorMessage = $"Greška kod spremanja: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
         }
     }
 }

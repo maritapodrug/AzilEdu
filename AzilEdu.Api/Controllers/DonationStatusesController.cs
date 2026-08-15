@@ -7,6 +7,8 @@ namespace AzilEdu.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Microsoft.AspNetCore.Authorization.Authorize(
+    Policy = AzilEdu.Api.Security.AuthorizationPolicies.Staff)]
 public class DonationStatusesController : ControllerBase
 {
     private readonly AzilEduDbContext _context;
@@ -20,8 +22,12 @@ public class DonationStatusesController : ControllerBase
     public async Task<ActionResult<List<LookupDto>>> GetDonationStatuses()
     {
         var result = await _context.DonationStatuses
-            .OrderBy(s => s.Id)
-            .Select(s => new LookupDto { Id = s.Id, Name = s.Name })
+            .OrderBy(status => status.Id)
+            .Select(status => new LookupDto
+            {
+                Id = status.Id,
+                Name = status.Name
+            })
             .ToListAsync();
 
         return Ok(result);

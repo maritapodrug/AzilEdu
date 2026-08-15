@@ -1,6 +1,12 @@
 using AzilEdu.Api.Data;
 using AzilEdu.Shared.Models;
 using Microsoft.EntityFrameworkCore;
+using AzilEdu.Api.Security;
+using AzilEdu.Api.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +17,68 @@ builder.Services.AddDbContext<AzilEduDbContext>(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName);
+var jwtOptions = jwtSection.Get<JwtOptions>()
+    ?? throw new InvalidOperationException("Nedostaje Jwt konfiguracija.");
+
+if (jwtOptions.SigningKey.Length < 32)
+    throw new InvalidOperationException(
+        "Jwt:SigningKey mora imati najmanje 32 znaka.");
+
+builder.Services.Configure<JwtOptions>(jwtSection);
+builder.Services.AddScoped<JwtTokenService>();
+
+builder.Services.Configure<AiOptions>(
+    builder.Configuration.GetSection(AiOptions.SectionName));
+
+builder.Services.AddScoped<MockAiService>();
+builder.Services.AddScoped<OpenAiService>();
+
+builder.Services.AddScoped<IAiService>(services =>
+{
+    var provider = builder.Configuration["Ai:Provider"];
+
+    return string.Equals(
+        provider,
+        "OpenAI",
+        StringComparison.OrdinalIgnoreCase)
+            ? services.GetRequiredService<OpenAiService>()
+            : services.GetRequiredService<MockAiService>();
+});
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtOptions.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwtOptions.Audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30)
+        };
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+
+    options.AddPolicy(
+        AuthorizationPolicies.Staff,
+        policy => policy.RequireRole("Admin", "Employee"));
+
+    options.AddPolicy(
+        AuthorizationPolicies.AdminOnly,
+        policy => policy.RequireRole("Admin"));
+});
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -18,6 +86,8 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AzilEduDbContext>();
 
     await db.Database.MigrateAsync();
+
+    await AppUserSeeder.SeedAsync(db);
 
     if (!await db.Animals.AnyAsync())
     {
@@ -106,7 +176,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseStaticFiles();
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

@@ -16,4 +16,5 @@ public class Donor
     public DonorType? DonorType { get; set; }
     public int DonorStatusId { get; set; }
     public DonorStatus? DonorStatus { get; set; }
+    public ICollection<Donation> Donations { get; set; } = new List<Donation>();
 }

@@ -1,0 +1,111 @@
+@page "/security-note"
+@rendermode InteractiveServer
+@using AzilEdu.App.Services
+@inject CurrentUserService CurrentUser
+
+<PageTitle>Sigurnosna napomena</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Sigurnosna napomena</MudText>
+<MudText Typo="Typo.body1" Class="mb-6">
+    Ova stranica opisuje ograničenja školske implementacije prijave i što bi se promijenilo u produkcijskoj aplikaciji.
+</MudText>
+
+<MudAlert Severity="Severity.Warning" Class="mb-6">
+    Trenutna implementacija je namijenjena isključivo za učenje. Ne koristi se za aplikacije koje obrađuju osjetljive podatke.
+</MudAlert>
+
+<MudExpansionPanels MultiExpansion="true">
+
+    <MudExpansionPanel Text="Ograničenje 1 — Prijava živi samo u memoriji preglednika">
+        <MudText Typo="Typo.body1" Class="mb-2">
+            <strong>Što radi trenutna implementacija:</strong> <code>CurrentUserService</code> je
+            Blazor scoped servis koji čuva prijavljenog korisnika u memoriji SignalR konekcije.
+            Nema kolačića, nema JWT tokena, nema trajne sesije.
+        </MudText>
+        <MudText Typo="Typo.body1" Class="mb-2">
+            <strong>Što to znači u praksi:</strong> Osvježavanjem preglednika (F5) korisnik je
+            automatski odjavljen. Ako SignalR konekcija pukne i ponovo se uspostavi, sesija je izgubljena.
+        </MudText>
+        <MudText Typo="Typo.body1">
+            <strong>Pravo rješenje:</strong> Koristiti ASP.NET Core cookie autentikaciju
+            (<code>AddAuthentication().AddCookie()</code>) ili JWT tokene koji se šalju u
+            <code>Authorization: Bearer ...</code> headeru. Sesija tada preživljava osvježavanje
+            i može imati definiran rok trajanja.
+        </MudText>
+    </MudExpansionPanel>
+
+    <MudExpansionPanel Text="Ograničenje 2 — Skriveni linkovi i conditional UI nisu API autorizacija">
+        <MudText Typo="Typo.body1" Class="mb-2">
+            <strong>Što radi trenutna implementacija:</strong> Navigacijski izbornik prikazuje
+            ili skriva linkove prema <code>CurrentUser.HasRole()</code>. Stranice kao što su
+            <code>/volunteer-tasks</code> i <code>/donors</code> nisu zaštićene — URL se može
+            upisati direktno u adresnu traku i stranica će se učitati bez provjere uloge.
+        </MudText>
+        <MudText Typo="Typo.body1" Class="mb-2">
+            <strong>Zašto je to problem:</strong> Skrivanje UI elemenata nije zaštita.
+            Korisnik koji zna URL ili koristi developer tools može pristupiti svim stranicama
+            i svim API endpointima bez prijave ili s krivom ulogom.
+        </MudText>
+        <MudText Typo="Typo.body1">
+            <strong>Pravo rješenje:</strong> Na Blazor stranicama koristiti
+            <code>[Authorize(Roles = "Admin")]</code> atribut ili <code>&lt;AuthorizeView&gt;</code>
+            komponentu. Na API kontrolerima koristiti <code>[Authorize]</code> i
+            <code>[Authorize(Roles = "Admin,Employee")]</code> atribute koji provjeravaju token
+            <em>na serveru</em> — ne u pregledniku.
+        </MudText>
+    </MudExpansionPanel>
+
+    <MudExpansionPanel Text="Ograničenje 3 — Lozinke i korisnici su hardkodirani u seederu">
+        <MudText Typo="Typo.body1" Class="mb-2">
+            <strong>Što radi trenutna implementacija:</strong> Demo korisnici s poznatim lozinkama
+            (<code>Admin123!</code>, <code>Donor123!</code>...) kreiraju se automatski pri pokretanju
+            API-ja ako ih nema u bazi. Svaki tko ima pristup bazi ili source kodu zna lozinke.
+        </MudText>
+        <MudText Typo="Typo.body1" Class="mb-2">
+            <strong>Zašto je to problem:</strong> U produkciji se lozinke nikad ne smiju nalaziti
+            u source kodu niti u migracijama. Napadač koji dođe do repozitorija ima pristup svim
+            demo računima. Ako se iste lozinke koriste i na produkcijskom serveru, to je direktna
+            sigurnosna rupa.
+        </MudText>
+        <MudText Typo="Typo.body1">
+            <strong>Pravo rješenje:</strong> Koristiti ASP.NET Core Identity koji automatski
+            hashira lozinke s <code>PBKDF2</code> algoritmom i soli. Inicijalne admin lozinke
+            čitati iz environment varijabli ili tajnog pohrana (<code>dotnet user-secrets</code>,
+            Azure Key Vault, AWS Secrets Manager). Nikad ne commitati lozinke u git.
+        </MudText>
+    </MudExpansionPanel>
+
+    <MudExpansionPanel Text="Gdje bi u pravoj aplikaciji išla cookie ili JWT autentikacija">
+        <MudText Typo="Typo.body1" Class="mb-2">
+            <strong>Cookie autentikacija</strong> je prikladna za Blazor Server aplikacije koje
+            nemaju zasebni mobilni klijent. Konfigurira se u <code>Program.cs</code>:
+        </MudText>
+        <MudPaper Class="pa-3 mb-3" Elevation="0" Style="background: var(--mud-palette-background-grey)">
+            <code>
+                builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;.AddCookie(options =&gt; &#123;<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;options.LoginPath = "/login";<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;options.ExpireTimeSpan = TimeSpan.FromHours(8);<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&#125;);
+            </code>
+        </MudPaper>
+        <MudText Typo="Typo.body1" Class="mb-2">
+            <strong>JWT autentikacija</strong> je prikladna kada App i API su zasebni projekti
+            (ili postoji mobilna aplikacija). App dobiva token pri prijavi, šalje ga u svakom
+            HTTP zahtjevu, a API validira potpis tokena bez pristupa bazi za svaki request.
+        </MudText>
+        <MudText Typo="Typo.body1">
+            U oba slučaja <code>[Authorize]</code> atribut na API kontrolerima čini stvarnu
+            zaštitu — ne UI skrivanje. Trenutna aplikacija nema niti jedno od toga.
+        </MudText>
+    </MudExpansionPanel>
+
+</MudExpansionPanels>
+
+@if (CurrentUser.HasRole("Admin"))
+{
+    <MudAlert Severity="Severity.Info" Class="mt-6">
+        Vidiš ovu stranicu kao Admin. U produkcijskoj aplikaciji ovakve administrativne stranice
+        bile bi zaštićene s <code>[Authorize(Roles = "Admin")]</code> na razini kontrolera.
+    </MudAlert>
+}

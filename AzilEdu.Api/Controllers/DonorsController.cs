@@ -8,6 +8,8 @@ namespace AzilEdu.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Microsoft.AspNetCore.Authorization.Authorize(
+    Policy = AzilEdu.Api.Security.AuthorizationPolicies.Staff)]
 public class DonorsController : ControllerBase
 {
     private readonly AzilEduDbContext _context;
@@ -77,7 +79,7 @@ public class DonorsController : ControllerBase
         if (donor is null)
             return NotFound();
 
-        var dto = new DonorDto
+        return Ok(new DonorDto
         {
             Id = donor.Id,
             FirstName = donor.FirstName,
@@ -93,9 +95,7 @@ public class DonorsController : ControllerBase
             DonorType = donor.DonorType != null ? donor.DonorType.Name : string.Empty,
             DonorStatusId = donor.DonorStatusId,
             Status = donor.DonorStatus != null ? donor.DonorStatus.Name : string.Empty
-        };
-
-        return Ok(dto);
+        });
     }
 
     [HttpPost]
@@ -119,33 +119,7 @@ public class DonorsController : ControllerBase
         _context.Donors.Add(donor);
         await _context.SaveChangesAsync();
 
-        var saved = await _context.Donors
-            .Include(d => d.DonorType)
-            .Include(d => d.DonorStatus)
-            .FirstOrDefaultAsync(d => d.Id == donor.Id);
-
-        if (saved is null)
-            return NotFound();
-
-        var result = new DonorDto
-        {
-            Id = saved.Id,
-            FirstName = saved.FirstName,
-            LastName = saved.LastName,
-            OrganizationName = saved.OrganizationName,
-            Email = saved.Email,
-            Phone = saved.Phone,
-            Address = saved.Address,
-            City = saved.City,
-            Notes = saved.Notes,
-            CreatedAt = saved.CreatedAt,
-            DonorTypeId = saved.DonorTypeId,
-            DonorType = saved.DonorType != null ? saved.DonorType.Name : string.Empty,
-            DonorStatusId = saved.DonorStatusId,
-            Status = saved.DonorStatus != null ? saved.DonorStatus.Name : string.Empty
-        };
-
-        return CreatedAtAction(nameof(GetDonorById), new { id = donor.Id }, result);
+        return await GetDonorById(donor.Id);
     }
 
     [HttpPut("{id}")]
@@ -182,7 +156,6 @@ public class DonorsController : ControllerBase
 
         _context.Donors.Remove(donor);
         await _context.SaveChangesAsync();
-
         return NoContent();
     }
 }

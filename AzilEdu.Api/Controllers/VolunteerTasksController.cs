@@ -19,6 +19,8 @@ public class VolunteerTasksController : ControllerBase
 
     // Kasnije će volunteerId dolaziti iz prijavljenog korisnika.
     [HttpGet]
+    [Microsoft.AspNetCore.Authorization.Authorize(
+    Policy = AzilEdu.Api.Security.AuthorizationPolicies.Staff)]
     public async Task<ActionResult<List<VolunteerTaskDto>>> GetVolunteerTasks(
         [FromQuery] int? statusId,
         [FromQuery] int? typeId,
@@ -76,7 +78,32 @@ public class VolunteerTasksController : ControllerBase
         return Ok(result);
     }
 
+    [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Volunteer")]
+    [HttpGet("mine")]
+    public async Task<ActionResult<List<VolunteerTaskDto>>> GetMyVolunteerTasks()
+    {
+        var volunteerClaim = User.FindFirst(
+            AzilEdu.Api.Security.AppClaimTypes.VolunteerId)?.Value;
+
+        if (!int.TryParse(volunteerClaim, out var volunteerId))
+            return Forbid();
+
+        var tasks = await _context.VolunteerTasks
+            .Include(task => task.Volunteer)
+            .Include(task => task.Animal)
+            .Include(task => task.VolunteerTaskStatus)
+            .Include(task => task.VolunteerTaskType)
+            .Where(task => task.VolunteerId == volunteerId)
+            .OrderBy(task => task.DueDate)
+            .ThenBy(task => task.Title)
+            .ToListAsync();
+
+        return Ok(tasks.Select(ToDto).ToList());
+    }
+
     [HttpGet("{id}")]
+    [Microsoft.AspNetCore.Authorization.Authorize(
+    Policy = AzilEdu.Api.Security.AuthorizationPolicies.Staff)]
     public async Task<ActionResult<VolunteerTaskDto>> GetVolunteerTaskById(int id)
     {
         var task = await _context.VolunteerTasks
@@ -95,6 +122,8 @@ public class VolunteerTasksController : ControllerBase
     }
 
     [HttpPost]
+    [Microsoft.AspNetCore.Authorization.Authorize(
+    Policy = AzilEdu.Api.Security.AuthorizationPolicies.Staff)]
     public async Task<ActionResult<VolunteerTaskDto>> CreateVolunteerTask(SaveVolunteerTaskDto request)
     {
         var task = new VolunteerTask
@@ -127,6 +156,8 @@ public class VolunteerTasksController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Microsoft.AspNetCore.Authorization.Authorize(
+    Policy = AzilEdu.Api.Security.AuthorizationPolicies.Staff)]
     public async Task<IActionResult> UpdateVolunteerTask(int id, SaveVolunteerTaskDto request)
     {
         var task = await _context.VolunteerTasks.FindAsync(id);
@@ -152,6 +183,8 @@ public class VolunteerTasksController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Microsoft.AspNetCore.Authorization.Authorize(
+    Policy = AzilEdu.Api.Security.AuthorizationPolicies.Staff)]
     public async Task<IActionResult> DeleteVolunteerTask(int id)
     {
         var task = await _context.VolunteerTasks.FindAsync(id);

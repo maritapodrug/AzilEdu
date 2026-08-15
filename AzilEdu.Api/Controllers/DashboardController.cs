@@ -30,16 +30,19 @@ public class DashboardController : ControllerBase
             EmployeesCount = await _context.Employees.CountAsync(),
 
             DonationsCount = await _context.Donations.CountAsync(),
-            PendingDonationsCount = await _context.Donations.CountAsync(d => d.DonationStatusId == 1),
+            PendingDonationsCount = await _context.Donations
+    .CountAsync(donation => donation.DonationStatusId == 1),
             MoneyDonationsTotal = await _context.Donations
-                .Where(d => d.DonationTypeId == 1 && d.Amount.HasValue)
-                .SumAsync(d => d.Amount ?? 0),
+    .Where(donation => donation.DonationTypeId == 1 && donation.Amount.HasValue)
+    .SumAsync(donation => donation.Amount!.Value),
             EstimatedMaterialDonationsTotal = await _context.Donations
-                .Where(d => d.DonationTypeId != 1 && d.EstimatedValue.HasValue)
-                .SumAsync(d => d.EstimatedValue ?? 0),
+    .Where(donation => donation.DonationTypeId != 1 && donation.EstimatedValue.HasValue)
+    .SumAsync(donation => donation.EstimatedValue!.Value),
             OverdueVolunteerTasksCount = await _context.VolunteerTasks
-                .CountAsync(t => t.DueDate.HasValue && t.DueDate.Value.Date < DateTime.Today
-                                 && t.VolunteerTaskStatusId != 4 && t.VolunteerTaskStatusId != 5)
+    .CountAsync(task => task.DueDate.HasValue
+        && task.DueDate.Value.Date < DateTime.Today
+        && task.VolunteerTaskStatusId != 4
+        && task.VolunteerTaskStatusId != 5)
         };
 
         return Ok(summary);
@@ -49,25 +52,27 @@ public class DashboardController : ControllerBase
     public async Task<ActionResult<List<RecentDonationDto>>> GetRecentDonations()
     {
         var donations = await _context.Donations
-            .Include(d => d.Donor)
-            .Include(d => d.DonationType)
-            .OrderByDescending(d => d.DonationDate)
+            .Include(donation => donation.Donor)
+            .Include(donation => donation.DonationType)
+            .OrderByDescending(donation => donation.DonationDate)
+            .ThenByDescending(donation => donation.Id)
             .Take(5)
-            .Select(d => new RecentDonationDto
-            {
-                Id = d.Id,
-                DonorName = d.Donor != null
-                    ? (string.IsNullOrWhiteSpace(d.Donor.OrganizationName)
-                        ? d.Donor.FirstName + " " + d.Donor.LastName
-                        : d.Donor.OrganizationName)
-                    : string.Empty,
-                DonationType = d.DonationType != null ? d.DonationType.Name : string.Empty,
-                DonationDate = d.DonationDate,
-                Amount = d.Amount,
-                ItemName = d.ItemName
-            })
             .ToListAsync();
 
-        return Ok(donations);
+        var result = donations.Select(donation => new RecentDonationDto
+        {
+            Id = donation.Id,
+            DonorName = donation.Donor is null
+                ? string.Empty
+                : !string.IsNullOrWhiteSpace(donation.Donor.OrganizationName)
+                    ? donation.Donor.OrganizationName
+                    : $"{donation.Donor.FirstName} {donation.Donor.LastName}".Trim(),
+            DonationType = donation.DonationType?.Name ?? string.Empty,
+            DonationDate = donation.DonationDate,
+            Amount = donation.Amount,
+            ItemName = donation.ItemName
+        }).ToList();
+
+        return Ok(result);
     }
 }

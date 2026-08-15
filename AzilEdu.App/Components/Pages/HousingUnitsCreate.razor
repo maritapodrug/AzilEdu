@@ -10,13 +10,6 @@
     Na ovoj stranici unosimo novi smještaj i podatke šaljemo prema API-ju preko POST zahtjeva.
 </MudText>
 
-@if (!string.IsNullOrWhiteSpace(statusMessage))
-{
-    <MudAlert Severity="Severity.Info" Class="mb-4">
-        @statusMessage
-    </MudAlert>
-}
-
 @if (!string.IsNullOrWhiteSpace(errorMessage))
 {
     <MudAlert Severity="Severity.Error" Class="mb-4">
@@ -37,15 +30,15 @@
     <MudButton ButtonType="ButtonType.Button"
                OnClick="SaveHousingUnit"
                Variant="Variant.Filled"
-               Color="Color.Primary">
-        Spremi
+               Color="Color.Primary"
+               Disabled="isSaving">
+        @(isSaving ? "Spremam..." : "Spremi")
     </MudButton>
 </MudStack>
 
 @code {
-    private string? statusMessage;
     private string? errorMessage;
-    private int saveClickCount;
+    private bool isSaving;
 
     private SaveHousingUnitDto model = new()
     {
@@ -57,12 +50,11 @@
 
     private async Task SaveHousingUnit()
     {
+        isSaving = true;
+        errorMessage = null;
+
         try
         {
-            saveClickCount++;
-            statusMessage = $"Klik na spremanje je primljen ({saveClickCount}).";
-            errorMessage = null;
-
             if (string.IsNullOrWhiteSpace(model.Name) || string.IsNullOrWhiteSpace(model.UnitType))
             {
                 errorMessage = "Upiši barem obavezna polja: ime i vrstu.";
@@ -90,6 +82,10 @@
         catch (Exception ex)
         {
             errorMessage = $"Greška kod spremanja: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
         }
     }
 }

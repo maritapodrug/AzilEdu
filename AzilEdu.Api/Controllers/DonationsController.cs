@@ -17,8 +17,9 @@ public class DonationsController : ControllerBase
         _context = context;
     }
 
-    // Kasnije će donator vidjeti samo svoje donacije.
     [HttpGet]
+    [Microsoft.AspNetCore.Authorization.Authorize(
+    Policy = AzilEdu.Api.Security.AuthorizationPolicies.Staff)]
     public async Task<ActionResult<List<DonationDto>>> GetDonations(
         [FromQuery] int? donorId,
         [FromQuery] int? typeId,
@@ -27,132 +28,137 @@ public class DonationsController : ControllerBase
         [FromQuery] DateTime? dateTo)
     {
         var query = _context.Donations
-            .Include(d => d.Donor)
-            .Include(d => d.DonationType)
-            .Include(d => d.DonationStatus)
+            .Include(donation => donation.Donor)
+            .Include(donation => donation.DonationType)
+            .Include(donation => donation.DonationStatus)
             .AsQueryable();
 
         if (donorId.HasValue)
-            query = query.Where(d => d.DonorId == donorId.Value);
+            query = query.Where(donation => donation.DonorId == donorId.Value);
 
         if (typeId.HasValue)
-            query = query.Where(d => d.DonationTypeId == typeId.Value);
+            query = query.Where(donation => donation.DonationTypeId == typeId.Value);
 
         if (statusId.HasValue)
-            query = query.Where(d => d.DonationStatusId == statusId.Value);
+            query = query.Where(donation => donation.DonationStatusId == statusId.Value);
 
         if (dateFrom.HasValue)
-            query = query.Where(d => d.DonationDate >= dateFrom.Value);
+            query = query.Where(donation => donation.DonationDate.Date >= dateFrom.Value.Date);
 
         if (dateTo.HasValue)
-            query = query.Where(d => d.DonationDate <= dateTo.Value);
+            query = query.Where(donation => donation.DonationDate.Date <= dateTo.Value.Date);
 
         var donations = await query
-            .OrderByDescending(d => d.DonationDate)
-            .Select(d => new DonationDto
-            {
-                Id = d.Id,
-                DonationDate = d.DonationDate,
-                Amount = d.Amount,
-                ItemName = d.ItemName,
-                Quantity = d.Quantity,
-                EstimatedValue = d.EstimatedValue,
-                Notes = d.Notes,
-                DonorId = d.DonorId,
-                DonorName = d.Donor != null
-                    ? (string.IsNullOrWhiteSpace(d.Donor.OrganizationName)
-                        ? d.Donor.FirstName + " " + d.Donor.LastName
-                        : d.Donor.OrganizationName)
-                    : string.Empty,
-                DonationTypeId = d.DonationTypeId,
-                DonationType = d.DonationType != null ? d.DonationType.Name : string.Empty,
-                DonationStatusId = d.DonationStatusId,
-                Status = d.DonationStatus != null ? d.DonationStatus.Name : string.Empty
-            })
+            .OrderByDescending(donation => donation.DonationDate)
+            .ThenByDescending(donation => donation.Id)
             .ToListAsync();
 
-        return Ok(donations);
+        return Ok(donations.Select(ToDto).ToList());
+    }
+
+    [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Donor")]
+    [HttpGet("mine")]
+    public async Task<ActionResult<List<DonationDto>>> GetMyDonations()
+    {
+        var donorClaim = User.FindFirst(
+            AzilEdu.Api.Security.AppClaimTypes.DonorId)?.Value;
+
+        if (!int.TryParse(donorClaim, out var donorId))
+            return Forbid();
+
+        var donations = await _context.Donations
+            .Include(donation => donation.Donor)
+            .Include(donation => donation.DonationType)
+            .Include(donation => donation.DonationStatus)
+            .Where(donation => donation.DonorId == donorId)
+            .OrderByDescending(donation => donation.DonationDate)
+            .ThenByDescending(donation => donation.Id)
+            .ToListAsync();
+
+        return Ok(donations.Select(ToDto).ToList());
     }
 
     [HttpGet("{id}")]
+    [Microsoft.AspNetCore.Authorization.Authorize(
+    Policy = AzilEdu.Api.Security.AuthorizationPolicies.Staff)]
     public async Task<ActionResult<DonationDto>> GetDonationById(int id)
     {
-        var d = await _context.Donations
-            .Include(x => x.Donor)
-            .Include(x => x.DonationType)
-            .Include(x => x.DonationStatus)
-            .FirstOrDefaultAsync(x => x.Id == id);
+        var donation = await _context.Donations
+            .Include(item => item.Donor)
+            .Include(item => item.DonationType)
+            .Include(item => item.DonationStatus)
+            .FirstOrDefaultAsync(item => item.Id == id);
 
-        if (d is null)
+        if (donation is null)
             return NotFound();
 
-        return Ok(new DonationDto
-        {
-            Id = d.Id,
-            DonationDate = d.DonationDate,
-            Amount = d.Amount,
-            ItemName = d.ItemName,
-            Quantity = d.Quantity,
-            EstimatedValue = d.EstimatedValue,
-            Notes = d.Notes,
-            DonorId = d.DonorId,
-            DonorName = d.Donor != null
-                ? (string.IsNullOrWhiteSpace(d.Donor.OrganizationName)
-                    ? d.Donor.FirstName + " " + d.Donor.LastName
-                    : d.Donor.OrganizationName)
-                : string.Empty,
-            DonationTypeId = d.DonationTypeId,
-            DonationType = d.DonationType != null ? d.DonationType.Name : string.Empty,
-            DonationStatusId = d.DonationStatusId,
-            Status = d.DonationStatus != null ? d.DonationStatus.Name : string.Empty
-        });
+        return Ok(ToDto(donation));
     }
 
     [HttpPost]
-    public async Task<ActionResult<DonationDto>> CreateDonation(SaveDonationDto dto)
+    [Microsoft.AspNetCore.Authorization.Authorize(
+    Policy = AzilEdu.Api.Security.AuthorizationPolicies.Staff)]
+    public async Task<ActionResult<DonationDto>> CreateDonation(SaveDonationDto request)
     {
+        var validationError = ValidateDonation(request);
+
+        if (validationError is not null)
+            return BadRequest(validationError);
+
         var donation = new Donation
         {
-            DonationDate = dto.DonationDate,
-            Amount = dto.Amount,
-            ItemName = dto.ItemName,
-            Quantity = dto.Quantity,
-            EstimatedValue = dto.EstimatedValue,
-            Notes = dto.Notes,
-            DonorId = dto.DonorId,
-            DonationTypeId = dto.DonationTypeId,
-            DonationStatusId = dto.DonationStatusId
+            DonorId = request.DonorId,
+            DonationTypeId = request.DonationTypeId,
+            DonationStatusId = request.DonationStatusId,
+            DonationDate = request.DonationDate,
+            Amount = request.Amount,
+            ItemName = request.ItemName,
+            Quantity = request.Quantity,
+            EstimatedValue = request.EstimatedValue,
+            Notes = request.Notes
         };
 
         _context.Donations.Add(donation);
         await _context.SaveChangesAsync();
 
-        return await GetDonationById(donation.Id);
+        await LoadReferences(donation);
+
+        return CreatedAtAction(nameof(GetDonationById), new { id = donation.Id }, ToDto(donation));
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateDonation(int id, SaveDonationDto dto)
+    [Microsoft.AspNetCore.Authorization.Authorize(
+    Policy = AzilEdu.Api.Security.AuthorizationPolicies.Staff)]
+    public async Task<IActionResult> UpdateDonation(int id, SaveDonationDto request)
     {
+        var validationError = ValidateDonation(request);
+
+        if (validationError is not null)
+            return BadRequest(validationError);
+
         var donation = await _context.Donations.FindAsync(id);
 
         if (donation is null)
             return NotFound();
 
-        donation.DonationDate = dto.DonationDate;
-        donation.Amount = dto.Amount;
-        donation.ItemName = dto.ItemName;
-        donation.Quantity = dto.Quantity;
-        donation.EstimatedValue = dto.EstimatedValue;
-        donation.Notes = dto.Notes;
-        donation.DonorId = dto.DonorId;
-        donation.DonationTypeId = dto.DonationTypeId;
-        donation.DonationStatusId = dto.DonationStatusId;
+        donation.DonorId = request.DonorId;
+        donation.DonationTypeId = request.DonationTypeId;
+        donation.DonationStatusId = request.DonationStatusId;
+        donation.DonationDate = request.DonationDate;
+        donation.Amount = request.Amount;
+        donation.ItemName = request.ItemName;
+        donation.Quantity = request.Quantity;
+        donation.EstimatedValue = request.EstimatedValue;
+        donation.Notes = request.Notes;
 
         await _context.SaveChangesAsync();
+
         return NoContent();
     }
 
     [HttpDelete("{id}")]
+    [Microsoft.AspNetCore.Authorization.Authorize(
+    Policy = AzilEdu.Api.Security.AuthorizationPolicies.Staff)]
     public async Task<IActionResult> DeleteDonation(int id)
     {
         var donation = await _context.Donations.FindAsync(id);
@@ -162,6 +168,76 @@ public class DonationsController : ControllerBase
 
         _context.Donations.Remove(donation);
         await _context.SaveChangesAsync();
+
         return NoContent();
+    }
+
+    private async Task LoadReferences(Donation donation)
+    {
+        await _context.Entry(donation).Reference(item => item.Donor).LoadAsync();
+        await _context.Entry(donation).Reference(item => item.DonationType).LoadAsync();
+        await _context.Entry(donation).Reference(item => item.DonationStatus).LoadAsync();
+    }
+
+    private static string? ValidateDonation(SaveDonationDto request)
+    {
+        if (request.DonorId <= 0)
+            return "Donator je obavezan.";
+
+        if (request.DonationTypeId <= 0)
+            return "Tip donacije je obavezan.";
+
+        if (request.DonationStatusId <= 0)
+            return "Status donacije je obavezan.";
+
+        if (request.DonationDate.Date > DateTime.Today)
+            return "Datum donacije ne smije biti u budućnosti.";
+
+        var isMoneyDonation = request.DonationTypeId == 1;
+
+        if (isMoneyDonation)
+        {
+            if (!request.Amount.HasValue || request.Amount.Value <= 0)
+                return "Za novčanu donaciju upiši iznos veći od nule.";
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(request.ItemName))
+                return "Za materijalnu donaciju upiši naziv.";
+
+            if (!request.Quantity.HasValue || request.Quantity.Value <= 0)
+                return "Za materijalnu donaciju upiši količinu veću od nule.";
+
+            if (request.EstimatedValue.HasValue && request.EstimatedValue.Value < 0)
+                return "Procijenjena vrijednost ne smije biti negativna.";
+        }
+
+        return null;
+    }
+
+    private static DonationDto ToDto(Donation donation)
+    {
+        var donorName = donation.Donor is null
+            ? string.Empty
+            : !string.IsNullOrWhiteSpace(donation.Donor.OrganizationName)
+                ? donation.Donor.OrganizationName
+                : $"{donation.Donor.FirstName} {donation.Donor.LastName}".Trim();
+
+        return new DonationDto
+        {
+            Id = donation.Id,
+            DonorId = donation.DonorId,
+            DonorName = donorName,
+            DonationTypeId = donation.DonationTypeId,
+            DonationType = donation.DonationType?.Name ?? string.Empty,
+            DonationStatusId = donation.DonationStatusId,
+            DonationStatus = donation.DonationStatus?.Name ?? string.Empty,
+            DonationDate = donation.DonationDate,
+            Amount = donation.Amount,
+            ItemName = donation.ItemName,
+            Quantity = donation.Quantity,
+            EstimatedValue = donation.EstimatedValue,
+            Notes = donation.Notes
+        };
     }
 }

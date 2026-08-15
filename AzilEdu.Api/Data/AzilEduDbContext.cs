@@ -13,13 +13,14 @@ namespace AzilEdu.Api.Data
         public DbSet<Animal> Animals => Set<Animal>();
         public DbSet<HousingUnit> HousingUnits => Set<HousingUnit>();
         public DbSet<AnimalStatus> AnimalStatuses => Set<AnimalStatus>();
+        public DbSet<AnimalMedia> AnimalMedia => Set<AnimalMedia>();
 
         public DbSet<Volunteer> Volunteers => Set<Volunteer>();
         public DbSet<VolunteerStatus> VolunteerStatuses => Set<VolunteerStatus>();
         public DbSet<VolunteerTask> VolunteerTasks => Set<VolunteerTask>();
         public DbSet<VolunteerTaskStatus> VolunteerTaskStatuses => Set<VolunteerTaskStatus>();
         public DbSet<VolunteerTaskType> VolunteerTaskTypes => Set<VolunteerTaskType>();
-        
+
         public DbSet<Donor> Donors => Set<Donor>();
         public DbSet<DonorType> DonorTypes => Set<DonorType>();
         public DbSet<DonorStatus> DonorStatuses => Set<DonorStatus>();
@@ -32,6 +33,10 @@ namespace AzilEdu.Api.Data
         public DbSet<EmployeePosition> EmployeePositions => Set<EmployeePosition>();
         public DbSet<EmployeeStatus> EmployeeStatuses => Set<EmployeeStatus>();
 
+        public DbSet<AppUser> AppUsers => Set<AppUser>();
+        public DbSet<AppUserRole> AppUserRoles => Set<AppUserRole>();
+        public DbSet<AppRole> AppRoles => Set<AppRole>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -42,6 +47,13 @@ namespace AzilEdu.Api.Data
                 .WithMany(status => status.Animals)
                 .HasForeignKey(animal => animal.AnimalStatusId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // AnimalMedia -> Animal
+            modelBuilder.Entity<AnimalMedia>()
+                .HasOne(media => media.Animal)
+                .WithMany(animal => animal.Media)
+                .HasForeignKey(media => media.AnimalId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<AnimalStatus>().HasData(
                 new AnimalStatus { Id = 1, Name = "Dostupna za udomljenje" },
@@ -64,14 +76,13 @@ namespace AzilEdu.Api.Data
                 new VolunteerStatus { Id = 4, Name = "Neaktivan" }
             );
 
-            // Donor -> DonorType
+            // Donor -> DonorType / DonorStatus
             modelBuilder.Entity<Donor>()
                 .HasOne(d => d.DonorType)
                 .WithMany(t => t.Donors)
                 .HasForeignKey(d => d.DonorTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Donor -> DonorStatus
             modelBuilder.Entity<Donor>()
                 .HasOne(d => d.DonorStatus)
                 .WithMany(s => s.Donors)
@@ -91,14 +102,13 @@ namespace AzilEdu.Api.Data
                 new DonorStatus { Id = 4, Name = "Neaktivan" }
             );
 
-            // Employee -> EmployeePosition
+            // Employee -> EmployeePosition / EmployeeStatus
             modelBuilder.Entity<Employee>()
                 .HasOne(e => e.EmployeePosition)
                 .WithMany(p => p.Employees)
                 .HasForeignKey(e => e.EmployeePositionId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Employee -> EmployeeStatus
             modelBuilder.Entity<Employee>()
                 .HasOne(e => e.EmployeeStatus)
                 .WithMany(s => s.Employees)
@@ -116,6 +126,129 @@ namespace AzilEdu.Api.Data
                 new EmployeeStatus { Id = 1, Name = "Aktivan" },
                 new EmployeeStatus { Id = 2, Name = "Na dopustu ili bolovanju" },
                 new EmployeeStatus { Id = 3, Name = "Neaktivan" }
+            );
+
+            // VolunteerTask -> Volunteer / Animal / Status / Type
+            modelBuilder.Entity<VolunteerTask>()
+                .HasOne(t => t.Volunteer)
+                .WithMany()
+                .HasForeignKey(t => t.VolunteerId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<VolunteerTask>()
+                .HasOne(t => t.Animal)
+                .WithMany()
+                .HasForeignKey(t => t.AnimalId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<VolunteerTask>()
+                .HasOne(t => t.VolunteerTaskStatus)
+                .WithMany(s => s.Tasks)
+                .HasForeignKey(t => t.VolunteerTaskStatusId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<VolunteerTask>()
+                .HasOne(t => t.VolunteerTaskType)
+                .WithMany(ty => ty.Tasks)
+                .HasForeignKey(t => t.VolunteerTaskTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<VolunteerTaskStatus>().HasData(
+                new VolunteerTaskStatus { Id = 1, Name = "Otvoren" },
+                new VolunteerTaskStatus { Id = 2, Name = "Dodijeljen" },
+                new VolunteerTaskStatus { Id = 3, Name = "U tijeku" },
+                new VolunteerTaskStatus { Id = 4, Name = "Završeno" },
+                new VolunteerTaskStatus { Id = 5, Name = "Otkazano" }
+            );
+
+            modelBuilder.Entity<VolunteerTaskType>().HasData(
+                new VolunteerTaskType { Id = 1, Name = "Šetnja" },
+                new VolunteerTaskType { Id = 2, Name = "Hranjenje" },
+                new VolunteerTaskType { Id = 3, Name = "Čišćenje" },
+                new VolunteerTaskType { Id = 4, Name = "Socijalizacija" },
+                new VolunteerTaskType { Id = 5, Name = "Prijevoz" },
+                new VolunteerTaskType { Id = 6, Name = "Administracija" }
+            );
+
+            // Donation -> Donor / DonationType / DonationStatus
+            modelBuilder.Entity<Donation>()
+                .HasOne(d => d.Donor)
+                .WithMany(donor => donor.Donations)
+                .HasForeignKey(d => d.DonorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Donation>()
+                .HasOne(d => d.DonationType)
+                .WithMany(t => t.Donations)
+                .HasForeignKey(d => d.DonationTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Donation>()
+                .HasOne(d => d.DonationStatus)
+                .WithMany(s => s.Donations)
+                .HasForeignKey(d => d.DonationStatusId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<DonationType>().HasData(
+                new DonationType { Id = 1, Name = "Novčana" },
+                new DonationType { Id = 2, Name = "Hrana" },
+                new DonationType { Id = 3, Name = "Oprema" },
+                new DonationType { Id = 4, Name = "Lijekovi" },
+                new DonationType { Id = 5, Name = "Usluga" }
+            );
+
+            modelBuilder.Entity<DonationStatus>().HasData(
+                new DonationStatus { Id = 1, Name = "Evidentirana" },
+                new DonationStatus { Id = 2, Name = "Potvrđena" },
+                new DonationStatus { Id = 3, Name = "Iskorištena" },
+                new DonationStatus { Id = 4, Name = "Otkazana" }
+            );
+
+            // AppUserRole -> composite key
+            modelBuilder.Entity<AppUserRole>()
+                .HasKey(r => new { r.AppUserId, r.AppRoleId });
+
+            modelBuilder.Entity<AppUserRole>()
+                .HasOne(r => r.AppUser)
+                .WithMany(u => u.UserRoles)
+                .HasForeignKey(r => r.AppUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<AppUserRole>()
+                .HasOne(r => r.AppRole)
+                .WithMany(a => a.UserRoles)
+                .HasForeignKey(r => r.AppRoleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // AppUser -> Volunteer / Donor / Employee (optional FKs)
+            modelBuilder.Entity<AppUser>()
+                .HasOne(u => u.Volunteer)
+                .WithMany()
+                .HasForeignKey(u => u.VolunteerId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<AppUser>()
+                .HasOne(u => u.Donor)
+                .WithMany()
+                .HasForeignKey(u => u.DonorId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<AppUser>()
+                .HasOne(u => u.Employee)
+                .WithMany()
+                .HasForeignKey(u => u.EmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<AppUser>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
+
+            modelBuilder.Entity<AppRole>().HasData(
+                new AppRole { Id = 1, Name = "User",      DisplayName = "Korisnik" },
+                new AppRole { Id = 2, Name = "Admin",     DisplayName = "Administrator" },
+                new AppRole { Id = 3, Name = "Employee",  DisplayName = "Djelatnik" },
+                new AppRole { Id = 4, Name = "Volunteer", DisplayName = "Volonter" },
+                new AppRole { Id = 5, Name = "Donor",     DisplayName = "Donator" }
             );
 
             // --- Dummy podaci: Volunteers ---
@@ -148,83 +281,6 @@ namespace AzilEdu.Api.Data
                 new Employee { Id = 4, FirstName = "Goran", LastName = "Tkalčić", Email = "goran.tkalcic@azil.hr", Phone = "091 700 1004", EmployeeNumber = "AZ-004", HireDate = new DateTime(2018, 6, 1), Notes = "Vodi administraciju i financije", EmployeePositionId = 4, EmployeeStatusId = 1 },
                 new Employee { Id = 5, FirstName = "Mirela", LastName = "Vuković", Email = "mirela.vukovic@azil.hr", Phone = "091 700 1005", EmployeeNumber = "AZ-005", HireDate = new DateTime(2022, 11, 7), Notes = "Brine o mačkama i malim životinjama", EmployeePositionId = 1, EmployeeStatusId = 2 },
                 new Employee { Id = 6, FirstName = "Davor", LastName = "Knežević", Email = "davor.knezevic@azil.hr", Phone = "091 700 1006", EmployeeNumber = "AZ-006", HireDate = new DateTime(2023, 3, 20), Notes = "Zamjenski djelatnik, radi na terenu", EmployeePositionId = 1, EmployeeStatusId = 1 }
-            );
-
-            modelBuilder.Entity<VolunteerTask>()
-                .HasOne(task => task.Volunteer)
-                .WithMany()
-                .HasForeignKey(task => task.VolunteerId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<VolunteerTask>()
-                .HasOne(task => task.Animal)
-                .WithMany()
-                .HasForeignKey(task => task.AnimalId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<VolunteerTask>()
-                .HasOne(task => task.VolunteerTaskStatus)
-                .WithMany(status => status.Tasks)
-                .HasForeignKey(task => task.VolunteerTaskStatusId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<VolunteerTask>()
-                .HasOne(task => task.VolunteerTaskType)
-                .WithMany(type => type.Tasks)
-                .HasForeignKey(task => task.VolunteerTaskTypeId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<VolunteerTaskStatus>().HasData(
-                new VolunteerTaskStatus { Id = 1, Name = "Otvoren" },
-                new VolunteerTaskStatus { Id = 2, Name = "Dodijeljen" },
-                new VolunteerTaskStatus { Id = 3, Name = "U tijeku" },
-                new VolunteerTaskStatus { Id = 4, Name = "Završeno" },
-                new VolunteerTaskStatus { Id = 5, Name = "Otkazano" }
-            );
-
-            modelBuilder.Entity<VolunteerTaskType>().HasData(
-                new VolunteerTaskType { Id = 1, Name = "Šetnja" },
-                new VolunteerTaskType { Id = 2, Name = "Hranjenje" },
-                new VolunteerTaskType { Id = 3, Name = "Čišćenje" },
-                new VolunteerTaskType { Id = 4, Name = "Socijalizacija" },
-                new VolunteerTaskType { Id = 5, Name = "Prijevoz" },
-                new VolunteerTaskType { Id = 6, Name = "Administracija" }
-            );
-
-            // Donation -> Donor
-            modelBuilder.Entity<Donation>()
-                .HasOne(d => d.Donor)
-                .WithMany()
-                .HasForeignKey(d => d.DonorId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // Donation -> DonationType
-            modelBuilder.Entity<Donation>()
-                .HasOne(d => d.DonationType)
-                .WithMany(t => t.Donations)
-                .HasForeignKey(d => d.DonationTypeId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // Donation -> DonationStatus
-            modelBuilder.Entity<Donation>()
-                .HasOne(d => d.DonationStatus)
-                .WithMany(s => s.Donations)
-                .HasForeignKey(d => d.DonationStatusId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<DonationType>().HasData(
-                new DonationType { Id = 1, Name = "Novčana" },
-                new DonationType { Id = 2, Name = "Hrana" },
-                new DonationType { Id = 3, Name = "Oprema" },
-                new DonationType { Id = 4, Name = "Lijekovi" },
-                new DonationType { Id = 5, Name = "Usluga" }
-            );
-
-            modelBuilder.Entity<DonationStatus>().HasData(
-                new DonationStatus { Id = 1, Name = "Evidentirana" },
-                new DonationStatus { Id = 2, Name = "Potvrđena" },
-                new DonationStatus { Id = 3, Name = "Iskorištena" },
-                new DonationStatus { Id = 4, Name = "Otkazana" }
             );
 
             // --- Dummy podaci: Donations ---

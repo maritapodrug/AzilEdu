@@ -3,6 +3,7 @@
 @using AzilEdu.Shared.DTOs
 @using System.Net.Http.Json
 @inject HttpClient Http
+@inject IDialogService DialogService
 
 <PageTitle>Volonteri</PageTitle>
 
@@ -11,7 +12,13 @@
     Popis volontera azila s mogućnošću pretrage, filtriranja i sortiranja.
 </MudText>
 
-<MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/volunteers/create" Class="mb-4">
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
+}
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/volunteers/create" Class="mb-4"
+           StartIcon="@Icons.Material.Filled.Add">
     Novi volonter
 </MudButton>
 
@@ -51,6 +58,14 @@
     </MudGrid>
 </MudPaper>
 
+@if (isLoading)
+{
+    <div class="d-flex justify-center my-6">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </div>
+}
+else
+{
 <MudTable Items="@volunteers"
           Filter="FilterVolunteers"
           Hover="true"
@@ -58,7 +73,6 @@
           Bordered="true"
           Dense="true">
     <HeaderContent>
-        <MudTh><MudTableSortLabel SortBy="new Func<VolunteerDto, object>(x => x.LastName)">Prezime</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortBy="new Func<VolunteerDto, object>(x => x.FirstName)">Ime</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortBy="new Func<VolunteerDto, object>(x => x.Email)">Email</MudTableSortLabel></MudTh>
         <MudTh>Telefon</MudTh>
@@ -96,17 +110,25 @@
         </MudText>
     </NoRecordsContent>
 </MudTable>
+}
 
 @code {
     private List<VolunteerDto> volunteers = new();
     private List<LookupDto> statusList = new();
     private string searchString = string.Empty;
     private string? selectedStatus;
+    private bool isLoading = true;
+    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        volunteers = await Http.GetFromJsonAsync<List<VolunteerDto>>("api/volunteers") ?? new();
-        statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/volunteerstatuses") ?? new();
+        try
+        {
+            volunteers = await Http.GetFromJsonAsync<List<VolunteerDto>>("api/volunteers")          ?? new();
+            statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/volunteerstatuses")      ?? new();
+        }
+        catch (Exception ex) { errorMessage = $"Greška kod učitavanja: {ex.Message}"; }
+        finally { isLoading = false; }
     }
 
     private bool FilterVolunteers(VolunteerDto volunteer)
@@ -142,12 +164,20 @@
 
     private async Task DeleteVolunteer(int id)
     {
-        var response = await Http.DeleteAsync($"api/volunteers/{id}");
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var dialog  = await DialogService.ShowAsync<ConfirmDialog>("Potvrda brisanja", options);
+        var result  = await dialog.Result;
+        if (result is null || result.Canceled) return;
 
-        if (response.IsSuccessStatusCode)
+        try
         {
-            volunteers = volunteers.Where(v => v.Id != id).ToList();
+            var response = await Http.DeleteAsync($"api/volunteers/{id}");
+            if (response.IsSuccessStatusCode)
+                volunteers = volunteers.Where(v => v.Id != id).ToList();
+            else
+                errorMessage = "Volontera nije moguće obrisati.";
         }
+        catch (Exception ex) { errorMessage = $"Greška kod brisanja: {ex.Message}"; }
     }
 
     private Color GetStatusColor(string status)

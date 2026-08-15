@@ -47,6 +47,18 @@
     </MudGrid>
 </MudPaper>
 
+@if (isLoading)
+{
+    <div class="d-flex justify-center my-6">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
+}
+else
+{
 <MudTable Items="@employees"
           Filter="FilterEmployees"
           Hover="true"
@@ -83,17 +95,25 @@
         </MudText>
     </NoRecordsContent>
 </MudTable>
+}
 
 @code {
     private List<EmployeeDto> employees = new();
     private List<LookupDto> statusList = new();
     private string searchString = string.Empty;
     private string? selectedStatus;
+    private bool isLoading = true;
+    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        employees = await Http.GetFromJsonAsync<List<EmployeeDto>>("api/employees") ?? new();
-        statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/employeestatuses") ?? new();
+        try
+        {
+            employees  = await Http.GetFromJsonAsync<List<EmployeeDto>>("api/employees")        ?? new();
+            statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/employeestatuses")   ?? new();
+        }
+        catch (Exception ex) { errorMessage = $"Greška kod učitavanja: {ex.Message}"; }
+        finally { isLoading = false; }
     }
 
     private bool FilterEmployees(EmployeeDto employee)

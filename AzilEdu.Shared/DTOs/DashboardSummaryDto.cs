@@ -9,7 +9,6 @@ public class DashboardSummaryDto
     public int ActiveDonorsCount { get; set; }
     public int EmployeesCount { get; set; }
 
-    // Domaći zadatak proširenje
     public int DonationsCount { get; set; }
     public int PendingDonationsCount { get; set; }
     public decimal MoneyDonationsTotal { get; set; }

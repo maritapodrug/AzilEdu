@@ -3,16 +3,31 @@
 @using AzilEdu.Shared.DTOs
 @using System.Net.Http.Json
 @inject HttpClient Http
+@inject IDialogService DialogService
 
 <MudText Typo="Typo.h4" GutterBottom="true">Životinje</MudText>
 <MudText Typo="Typo.body1" Class="mb-4">
     Na ovoj stranici prikazujemo životinje koje dolaze iz baze preko API-ja i DTO objekata.
 </MudText>
 
-<MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/animals/create" Class="mb-4">
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
+}
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/animals/create" Class="mb-4"
+           StartIcon="@Icons.Material.Filled.Add">
     Nova životinja
 </MudButton>
 
+@if (isLoading)
+{
+    <div class="d-flex justify-center my-6">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </div>
+}
+else
+{
 <MudPaper Class="pa-4 mb-4">
     <MudGrid>
         <MudItem xs="12" md="4">
@@ -82,11 +97,21 @@
 
     <RowTemplate>
         <MudTd DataLabel="Slika">
-            <MudAvatar Size="Size.Large">
-                <MudImage Src="@context.ImageUrl" Alt="@context.Name" />
-            </MudAvatar>
+            <MudTooltip Text="@($"Otvori profil — {context.Name}")" Placement="Placement.Right">
+                <MudLink Href="@($"/animals/{context.Id}")" Underline="Underline.None">
+                    <MudAvatar Size="Size.Large"
+                               Style="cursor:pointer; border: 2px solid transparent; transition: border-color .2s;"
+                               Class="hover-avatar">
+                        <MudImage Src="@context.ImageUrl" Alt="@context.Name" />
+                    </MudAvatar>
+                </MudLink>
+            </MudTooltip>
         </MudTd>
-        <MudTd DataLabel="Ime">@context.Name</MudTd>
+        <MudTd DataLabel="Ime">
+            <MudLink Href="@($"/animals/{context.Id}")" Typo="Typo.body1" Color="Color.Primary">
+                @context.Name
+            </MudLink>
+        </MudTd>
         <MudTd DataLabel="Vrsta">@context.Species</MudTd>
         <MudTd DataLabel="Pasmina">@context.Breed</MudTd>
         <MudTd DataLabel="Spol">@context.Gender</MudTd>
@@ -98,12 +123,26 @@
             </MudChip>
         </MudTd>
         <MudTd DataLabel="Akcije">
-            <MudButton Variant="Variant.Text" Color="Color.Primary" Href="@($"/animals/edit/{context.Id}")">
-                Uredi
-            </MudButton>
-            <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="@(() => DeleteAnimal(context.Id))">
-                Obriši
-            </MudButton>
+            <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                <MudTooltip Text="Otvori profil">
+                    <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                                   Color="Color.Info"
+                                   Size="Size.Small"
+                                   Href="@($"/animals/{context.Id}")" />
+                </MudTooltip>
+                <MudTooltip Text="Uredi">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                   Color="Color.Primary"
+                                   Size="Size.Small"
+                                   Href="@($"/animals/edit/{context.Id}")" />
+                </MudTooltip>
+                <MudTooltip Text="Obriši">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Color="Color.Error"
+                                   Size="Size.Small"
+                                   OnClick="@(() => DeleteAnimal(context.Id))" />
+                </MudTooltip>
+            </MudStack>
         </MudTd>
     </RowTemplate>
 
@@ -113,6 +152,7 @@
         </MudText>
     </NoRecordsContent>
 </MudTable>
+}
 
 @code {
     private List<AnimalDto> animals = new();
@@ -120,11 +160,18 @@
     private string? selectedSpecies;
     private List<LookupDto> statusList = new();
     private string? selectedStatus;
+    private bool isLoading = true;
+    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        animals = await Http.GetFromJsonAsync<List<AnimalDto>>("api/animals") ?? new();
-        statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/animalstatuses") ?? new();
+        try
+        {
+            animals    = await Http.GetFromJsonAsync<List<AnimalDto>>("api/animals")       ?? new();
+            statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/animalstatuses") ?? new();
+        }
+        catch (Exception ex) { errorMessage = $"Greška kod učitavanja: {ex.Message}"; }
+        finally { isLoading = false; }
     }
 
     private bool FilterAnimals(AnimalDto animal)
@@ -178,12 +225,20 @@
 
     private async Task DeleteAnimal(int id)
     {
-        var response = await Http.DeleteAsync($"api/animals/{id}");
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var dialog  = await DialogService.ShowAsync<ConfirmDialog>("Potvrda brisanja", options);
+        var result  = await dialog.Result;
+        if (result is null || result.Canceled) return;
 
-        if (response.IsSuccessStatusCode)
+        try
         {
-            animals = animals.Where(a => a.Id != id).ToList();
+            var response = await Http.DeleteAsync($"api/animals/{id}");
+            if (response.IsSuccessStatusCode)
+                animals = animals.Where(a => a.Id != id).ToList();
+            else
+                errorMessage = "Životinju nije moguće obrisati.";
         }
+        catch (Exception ex) { errorMessage = $"Greška kod brisanja: {ex.Message}"; }
     }
 
     private Color GetStatusColor(string status)

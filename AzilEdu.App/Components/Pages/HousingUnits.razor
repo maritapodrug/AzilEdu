@@ -3,6 +3,7 @@
 @using AzilEdu.Shared.DTOs
 @using System.Net.Http.Json
 @inject HttpClient Http
+@inject IDialogService DialogService
 
 <PageTitle>Smještajne jedinice</PageTitle>
 
@@ -10,6 +11,20 @@
 <MudText Typo="Typo.body1" Class="mb-4">
     Ovdje se prikazuje pregled smještajnih jedinica za životinje koje se trenutačno nalaze u azilu.
 </MudText>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
+}
+
+@if (isLoading)
+{
+    <div class="d-flex justify-center my-6">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </div>
+}
+else
+{
 
 <MudGrid Class="mb-4">
     <MudItem xs="12" sm="4">
@@ -87,25 +102,34 @@
             </MudButton>
         </MudTd>
     </RowTemplate>
+
+    <NoRecordsContent>
+        <MudText Typo="Typo.body1" Class="pa-4">
+            Nema smještajnih jedinica za odabrani filter.
+        </MudText>
+    </NoRecordsContent>
 </MudTable>
+}
 
 @code {
     private string selectedStatus = "Sve";
-
     private List<HousingUnitDto> housingUnits = new();
-    
-    private int TotalUnits => housingUnits.Count;
+    private bool isLoading = true;
+    private string? errorMessage;
 
-    private int NumberOfActive => housingUnits.Count(HousingUnit => HousingUnit.IsActive);
-
-    private int NumberOfFull => housingUnits.Count(HousingUnit => HousingUnit.Capacity==HousingUnit.Occupied);
-
-	private int FreeCapacity => housingUnits.Sum(HousingUnit => GetFreeCapacity(HousingUnit));
+    private int TotalUnits    => housingUnits.Count;
+    private int NumberOfActive => housingUnits.Count(u => u.IsActive);
+    private int NumberOfFull   => housingUnits.Count(u => u.Capacity == u.Occupied);
+    private int FreeCapacity   => housingUnits.Sum(u => GetFreeCapacity(u));
 
     protected override async Task OnInitializedAsync()
     {
-        List<HousingUnitDto>? result = await Http.GetFromJsonAsync<List<HousingUnitDto>>("api/housing-units");
-        housingUnits = result ?? new List<HousingUnitDto>();
+        try
+        {
+            housingUnits = await Http.GetFromJsonAsync<List<HousingUnitDto>>("api/housing-units") ?? new();
+        }
+        catch (Exception ex) { errorMessage = $"Greška kod učitavanja: {ex.Message}"; }
+        finally { isLoading = false; }
     }
 
     private IEnumerable<HousingUnitDto> FilteredHousingUnits =>
@@ -185,11 +209,19 @@
 
     private async Task DeleteHousingUnit(int id)
     {
-        var response = await Http.DeleteAsync($"api/housing-units/{id}");
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var dialog  = await DialogService.ShowAsync<ConfirmDialog>("Potvrda brisanja", options);
+        var result  = await dialog.Result;
+        if (result is null || result.Canceled) return;
 
-        if (response.IsSuccessStatusCode)
+        try
         {
-            housingUnits = housingUnits.Where(a => a.Id != id).ToList();
+            var response = await Http.DeleteAsync($"api/housing-units/{id}");
+            if (response.IsSuccessStatusCode)
+                housingUnits = housingUnits.Where(u => u.Id != id).ToList();
+            else
+                errorMessage = "Smještajnu jedinicu nije moguće obrisati.";
         }
+        catch (Exception ex) { errorMessage = $"Greška kod brisanja: {ex.Message}"; }
     }
 }
